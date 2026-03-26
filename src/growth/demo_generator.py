@@ -52,27 +52,24 @@ async def generate_demo_scripts(
         "Content-Type": "application/json",
     }
     payload = {
-        "model": settings.openrouter_model,
+        "model": settings.openrouter_model.strip(),
         "max_tokens": 2048,
         "messages": [{"role": "user", "content": prompt}],
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                f"{settings.openrouter_base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            )
-            resp.raise_for_status()
-            result = resp.json()
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            f"{settings.openrouter_base_url}/chat/completions",
+            json=payload,
+            headers=headers,
+        )
+        resp.raise_for_status()
+        result = resp.json()
 
-        text = result["choices"][0]["message"]["content"]
-        scripts = safe_json_parse(text, expect_type="array")
-        if scripts:
-            return scripts[:3]
-    except Exception as e:
-        logger.error(f"Demo script generation failed: {e}")
+    text = result["choices"][0]["message"]["content"]
+    scripts = safe_json_parse(text, expect_type="array")
+    if scripts:
+        return scripts[:3]
 
     return []
 
