@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: yipin-engine
+    runtime: python
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: uvicorn src.growth.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: MINIMAX_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///yipin.db

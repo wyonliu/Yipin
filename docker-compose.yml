@@ -1,0 +1,20 @@
+services:
+  engine:
+    build: .
+    env_file: .env
+    volumes:
+      - ./workspace:/app/workspace     # Persist generated creatives
+      - ./assets:/app/assets           # Product images, BGM, fonts
+      - ./yipin.db:/app/yipin.db       # SQLite DB (dev mode)
+    restart: unless-stopped
+    command: python main.py run
+
+  dashboard:
+    build: .
+    env_file: .env
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./yipin.db:/app/yipin.db
+    restart: unless-stopped
+    command: streamlit run dashboard/app.py --server.port 8501 --server.address 0.0.0.0

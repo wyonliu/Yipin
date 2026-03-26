@@ -1,0 +1,82 @@
+# 产品信息库 - 每个产品的卖点/素材/供应商信息
+# AI 脚本生成和投放都从这里读取产品信息
+
+products:
+  gegen_fuling_su:
+    name: "葛根茯苓酥"
+    short_name: "葛根酥"
+    origin: "洛阳"
+    heritage_tag: "河南非遗传统糕点"
+    price: 59.0
+    cost: 18.0  # 代发成本
+    target_cpa: 22.0
+
+    selling_points:
+      - "传承200年的洛阳非遗糕点配方"
+      - "葛根+茯苓，药食同源，健康零食"
+      - "不添加防腐剂，手工现做现发"
+      - "入口即化，不甜不腻，老少皆宜"
+
+    pain_points:
+      - "送礼不知道送什么，千篇一律没新意"
+      - "想吃零食又怕不健康"
+      - "河南美食这么多，可惜很多人不知道"
+      - "办公室下午茶总是那几样"
+
+    hooks:
+      - "你知道河南有一种吃了200年的糕点吗？"
+      - "办公室零食别再吃垃圾食品了！"
+      - "葛根茯苓是什么？老中医自己都在吃"
+      - "送爸妈的礼物，我终于找到了"
+      - "不吃不知道，一吃忘不掉"
+
+    hashtags:
+      - "#河南非遗美食"
+      - "#健康零食推荐"
+      - "#办公室零食"
+      - "#葛根茯苓"
+      - "#送礼推荐"
+
+    images_dir: "assets/products/gegen_fuling_su/"
+    supplier:
+      name: "洛阳XX食品厂"
+      contact_type: "feishu"  # feishu | api | wechat
+      contact_id: ""
+
+  hulатang_liaobao:
+    name: "逍遥镇胡辣汤料包"
+    short_name: "胡辣汤"
+    origin: "周口西华"
+    heritage_tag: "逍遥镇非遗胡辣汤"
+    price: 29.9
+    cost: 8.0
+    target_cpa: 15.0
+
+    selling_points:
+      - "逍遥镇正宗配方，非遗传承人监制"
+      - "一包搞定，5分钟还原街头味道"
+      - "早餐神器，比外卖干净实惠"
+      - "料足味正，一包煮一大锅"
+
+    pain_points:
+      - "离开河南就喝不到正宗胡辣汤"
+      - "早餐不知道吃什么"
+      - "外卖太贵又不健康"
+
+    hooks:
+      - "河南人的早餐神器，你喝过吗？"
+      - "5块钱煮一大锅，比外卖香10倍"
+      - "在外地的河南人，看到这个会哭"
+      - "早餐不知道吃什么？试试这个"
+
+    hashtags:
+      - "#胡辣汤"
+      - "#河南美食"
+      - "#早餐推荐"
+      - "#逍遥镇"
+
+    images_dir: "assets/products/hulatang/"
+    supplier:
+      name: "西华XX调味品厂"
+      contact_type: "feishu"
+      contact_id: ""

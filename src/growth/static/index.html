@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邑品引擎 — AI千川代投，效果付费</title>
+<meta name="description" content="AI自动生成带货素材+千川智能投放，商家零操作，按效果付费。免费体验AI生成脚本。">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a16;--card:#13132a;--gold:#c8a96e;--gold2:#e8d5a8;--text:#e0e0e0;--muted:#8888aa;--green:#4ade80;--red:#f87171}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.container{max-width:800px;margin:0 auto;padding:20px}
+
+/* Hero */
+.hero{text-align:center;padding:60px 20px 40px}
+.hero h1{font-size:2.4em;color:var(--gold);margin-bottom:12px}
+.hero .sub{font-size:1.2em;color:var(--muted);margin-bottom:32px}
+.hero .stats{display:flex;justify-content:center;gap:40px;margin-bottom:40px}
+.hero .stat{text-align:center}
+.hero .stat .num{font-size:2em;color:var(--gold2);font-weight:bold}
+.hero .stat .label{font-size:0.85em;color:var(--muted)}
+
+/* Pain points */
+.pain{background:var(--card);border-radius:16px;padding:32px;margin:24px 0}
+.pain h2{color:var(--gold);margin-bottom:16px;font-size:1.4em}
+.pain ul{list-style:none;padding:0}
+.pain li{padding:8px 0;border-bottom:1px solid #1a1a3a}
+.pain li:last-child{border:none}
+.pain li::before{content:"❌ ";color:var(--red)}
+.pain li.solve::before{content:"✅ ";color:var(--green)}
+
+/* Demo section */
+.demo{background:linear-gradient(135deg,#1a1a3a,#0d0d2a);border:1px solid #2a2a4a;border-radius:16px;padding:32px;margin:32px 0}
+.demo h2{color:var(--gold);margin-bottom:8px;font-size:1.4em}
+.demo p{color:var(--muted);margin-bottom:20px}
+.form-row{margin-bottom:16px}
+.form-row label{display:block;color:var(--muted);font-size:0.9em;margin-bottom:4px}
+.form-row input,.form-row textarea{width:100%;padding:12px;background:#0a0a1a;border:1px solid #2a2a4a;border-radius:8px;color:var(--text);font-size:1em}
+.form-row input:focus,.form-row textarea:focus{outline:none;border-color:var(--gold)}
+.btn{display:inline-block;padding:14px 32px;background:var(--gold);color:#0a0a16;border:none;border-radius:8px;font-size:1.1em;font-weight:bold;cursor:pointer;transition:all 0.2s}
+.btn:hover{background:var(--gold2);transform:translateY(-1px)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-outline{background:transparent;border:2px solid var(--gold);color:var(--gold)}
+.btn-outline:hover{background:var(--gold);color:#0a0a16}
+
+/* Results */
+#results{margin-top:24px;display:none}
+.script-card{background:#0a0a1a;border:1px solid #2a2a4a;border-radius:12px;padding:20px;margin:12px 0}
+.script-card .angle{color:var(--gold);font-size:0.85em;text-transform:uppercase;margin-bottom:8px}
+.script-card .hook{font-size:1.1em;font-weight:bold;margin-bottom:8px}
+.script-card .body{color:var(--muted);font-size:0.95em}
+.script-card .audio-btn{margin-top:12px;padding:8px 16px;font-size:0.9em}
+
+/* How it works */
+.steps{margin:40px 0}
+.steps h2{color:var(--gold);text-align:center;margin-bottom:24px;font-size:1.4em}
+.step{display:flex;align-items:flex-start;gap:16px;padding:16px 0}
+.step-num{background:var(--gold);color:#0a0a16;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0}
+.step-content h3{margin-bottom:4px}
+.step-content p{color:var(--muted);font-size:0.95em}
+
+/* Pricing */
+.pricing{background:var(--card);border-radius:16px;padding:32px;margin:32px 0;text-align:center}
+.pricing h2{color:var(--gold);margin-bottom:16px}
+.pricing .price{font-size:2em;color:var(--gold2);font-weight:bold;margin:16px 0}
+.pricing .note{color:var(--muted);font-size:0.9em}
+
+/* CTA */
+.cta{text-align:center;padding:40px 0}
+.cta h2{color:var(--gold);margin-bottom:12px;font-size:1.6em}
+.cta p{color:var(--muted);margin-bottom:24px}
+
+/* Onboard form */
+#onboard-form{display:none;background:var(--card);border-radius:16px;padding:32px;margin:32px 0}
+#onboard-form h2{color:var(--gold);margin-bottom:20px}
+
+.loading{display:inline-block;width:20px;height:20px;border:2px solid var(--gold);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Success banner */
+.success-banner{background:linear-gradient(135deg,#1a3a1a,#0d2a0d);border:1px solid var(--green);border-radius:12px;padding:20px;text-align:center;margin:20px 0;display:none}
+.success-banner h3{color:var(--green);margin-bottom:8px}
+
+footer{text-align:center;padding:40px 0;color:var(--muted);font-size:0.85em}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- Hero -->
+<div class="hero">
+  <h1>邑品引擎</h1>
+  <p class="sub">AI全自动千川投流 — 你管发货，我管卖货</p>
+  <div class="stats">
+    <div class="stat"><div class="num">0</div><div class="label">人工操作</div></div>
+    <div class="stat"><div class="num">24/7</div><div class="label">自动投放</div></div>
+    <div class="stat"><div class="num">效果付费</div><div class="label">不赚不收</div></div>
+  </div>
+</div>
+
+<!-- Success banner (shown after OAuth) -->
+<div class="success-banner" id="success-banner">
+  <h3>入驻成功！</h3>
+  <p>您的账户已激活，AI投放引擎正在启动...</p>
+</div>
+
+<!-- Pain Points -->
+<div class="pain">
+  <h2>千川投流的痛</h2>
+  <ul>
+    <li>请一个投手月薪8000-15000，还只能管3-5个计划</li>
+    <li>素材拍不出来，外包一条视频500-2000元</li>
+    <li>ROI忽高忽低，爆了不知道为什么，亏了也不知道为什么</li>
+    <li>每天盯数据、调计划、杀预算，精力全耗在这</li>
+  </ul>
+  <h2 style="margin-top:24px">邑品引擎帮你解决</h2>
+  <ul>
+    <li class="solve">AI自动生成带货脚本+配音+视频，每天20条，边际成本≈0</li>
+    <li class="solve">AI 24小时自动盯盘：ROI好的自动加量，亏的2小时内关停</li>
+    <li class="solve">爆款素材特征自动反哺下一批创意，越跑越聪明</li>
+    <li class="solve">你唯一要做的：发货。其他全交给AI</li>
+  </ul>
+</div>
+
+<!-- Free Demo -->
+<div class="demo" id="demo">
+  <h2>免费体验：AI 3秒生成带货脚本</h2>
+  <p>输入你的产品信息，立即看到AI生成的带货脚本质量</p>
+  <div class="form-row">
+    <label>产品名称</label>
+    <input type="text" id="product-name" placeholder="如：洛阳葛根茯苓酥" />
+  </div>
+  <div class="form-row">
+    <label>核心卖点（用逗号分隔）</label>
+    <input type="text" id="selling-points" placeholder="如：非遗传承200年, 药食同源, 无添加" />
+  </div>
+  <div class="form-row">
+    <label>售价（元，可选）</label>
+    <input type="number" id="price" placeholder="如：59" />
+  </div>
+  <button class="btn" id="gen-btn" onclick="generateDemo()">AI 生成脚本</button>
+
+  <div id="results"></div>
+</div>
+
+<!-- How it works -->
+<div class="steps">
+  <h2>3步开通，全自动赚钱</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>填写产品信息</h3>
+      <p>产品名、卖点、价格 — 30秒搞定</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>一键授权千川</h3>
+      <p>点击授权按钮 → 跳转千川 → 确认 → 完成。全程10秒</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>AI自动开跑</h3>
+      <p>每天6点自动生成素材，8点自动投放，全天自动优化，23点发日报</p>
+    </div>
+  </div>
+</div>
+
+<!-- Pricing -->
+<div class="pricing">
+  <h2>收费模式</h2>
+  <div class="price">GMV × 10%</div>
+  <p>AI帮你卖出的货，按成交额10%收取服务费</p>
+  <p class="note" style="margin-top:12px">不出单 = 不收费 | 千川广告费由商家自己的账户扣除</p>
+</div>
+
+<!-- CTA / Onboard -->
+<div class="cta">
+  <h2>现在开通，今天就开始卖</h2>
+  <p>已有抖店和千川账户？3分钟完成入驻</p>
+  <button class="btn" onclick="showOnboard()">立即入驻</button>
+</div>
+
+<div id="onboard-form">
+  <h2>商家入驻</h2>
+  <div class="form-row">
+    <label>店铺名称</label>
+    <input type="text" id="ob-name" placeholder="你的抖店名称" />
+  </div>
+  <div class="form-row">
+    <label>联系人姓名</label>
+    <input type="text" id="ob-contact" placeholder="姓名" />
+  </div>
+  <div class="form-row">
+    <label>联系电话</label>
+    <input type="tel" id="ob-phone" placeholder="手机号" />
+  </div>
+  <div class="form-row">
+    <label>主推产品名称</label>
+    <input type="text" id="ob-product" placeholder="如：葛根茯苓酥" />
+  </div>
+  <div class="form-row">
+    <label>产品卖点</label>
+    <input type="text" id="ob-points" placeholder="逗号分隔" />
+  </div>
+  <div class="form-row">
+    <label>产品价格（元）</label>
+    <input type="number" id="ob-price" placeholder="59" />
+  </div>
+  <button class="btn" id="ob-btn" onclick="submitOnboard()">提交并授权千川</button>
+  <p id="ob-status" style="margin-top:12px;color:var(--muted)"></p>
+</div>
+
+<footer>
+  <p>邑品引擎 &copy; 2026 — AI驱动的全自动千川代投平台</p>
+</footer>
+
+</div>
+
+<script>
+// Check for successful onboarding redirect
+if(new URLSearchParams(location.search).get('onboarded')){
+  document.getElementById('success-banner').style.display='block';
+  window.scrollTo(0,0);
+}
+
+async function generateDemo(){
+  const btn=document.getElementById('gen-btn');
+  const name=document.getElementById('product-name').value.trim();
+  const points=document.getElementById('selling-points').value.trim().split(/[,，]/).filter(Boolean);
+  const price=parseFloat(document.getElementById('price').value)||null;
+
+  if(!name){alert('请输入产品名称');return}
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="loading"></span>AI生成中...';
+
+  try{
+    const resp=await fetch('/api/demo/scripts',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({product_name:name,selling_points:points,price:price})
+    });
+    const data=await resp.json();
+
+    const results=document.getElementById('results');
+    if(data.scripts&&data.scripts.length>0){
+      results.innerHTML=data.scripts.map((s,i)=>`
+        <div class="script-card">
+          <div class="angle">${s.angle||'角度'+(i+1)}</div>
+          <div class="hook">${s.hook}</div>
+          <div class="body">${s.full_script||s.body}</div>
+          <button class="btn btn-outline audio-btn" onclick="playAudio('${encodeURIComponent(s.full_script||s.body)}',this)">试听AI配音</button>
+        </div>
+      `).join('');
+      results.style.display='block';
+    }else{
+      results.innerHTML='<p style="color:var(--red)">生成失败，请稍后重试</p>';
+      results.style.display='block';
+    }
+  }catch(e){
+    alert('网络错误：'+e.message);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='AI 生成脚本';
+  }
+}
+
+async function playAudio(textEncoded,btn){
+  const text=decodeURIComponent(textEncoded);
+  btn.disabled=true;
+  btn.innerHTML='<span class="loading"></span>生成音频...';
+  try{
+    const resp=await fetch('/api/demo/audio',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text})
+    });
+    const data=await resp.json();
+    if(data.audio_base64){
+      const audio=new Audio('data:audio/mp3;base64,'+data.audio_base64);
+      audio.play();
+      btn.textContent='播放中...';
+      audio.onended=()=>{btn.textContent='试听AI配音';btn.disabled=false};
+    }else{
+      btn.textContent='音频生成失败';
+      setTimeout(()=>{btn.textContent='试听AI配音';btn.disabled=false},2000);
+    }
+  }catch(e){
+    btn.textContent='试听AI配音';btn.disabled=false;
+  }
+}
+
+function showOnboard(){
+  document.getElementById('onboard-form').style.display='block';
+  document.getElementById('onboard-form').scrollIntoView({behavior:'smooth'});
+}
+
+async function submitOnboard(){
+  const btn=document.getElementById('ob-btn');
+  const status=document.getElementById('ob-status');
+  const name=document.getElementById('ob-name').value.trim();
+  const contact=document.getElementById('ob-contact').value.trim();
+  const phone=document.getElementById('ob-phone').value.trim();
+  const product=document.getElementById('ob-product').value.trim();
+  const points=document.getElementById('ob-points').value.trim().split(/[,，]/).filter(Boolean);
+  const price=parseFloat(document.getElementById('ob-price').value)||0;
+
+  if(!name||!contact||!phone){alert('请填写完整信息');return}
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="loading"></span>注册中...';
+  status.textContent='';
+
+  try{
+    const resp=await fetch('/api/merchant/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:name,contact_name:contact,contact_phone:phone,
+        product:{name:product,selling_points:points,price:price}
+      })
+    });
+    const data=await resp.json();
+
+    if(data.merchant_id){
+      status.textContent='注册成功！正在跳转千川授权...';
+      // Get OAuth URL and redirect
+      const oauthResp=await fetch('/api/merchant/oauth-url?merchant_id='+data.merchant_id);
+      const oauthData=await oauthResp.json();
+      if(oauthData.oauth_url){
+        window.location.href=oauthData.oauth_url;
+      }
+    }
+  }catch(e){
+    status.textContent='注册失败：'+e.message;
+    btn.disabled=false;
+    btn.textContent='提交并授权千川';
+  }
+}
+</script>
+
+</body>
+</html>

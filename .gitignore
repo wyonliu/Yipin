@@ -1,0 +1,13 @@
+.env
+*.db
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+workspace/
+*.mp3
+*.mp4
+*.wav
+.DS_Store
