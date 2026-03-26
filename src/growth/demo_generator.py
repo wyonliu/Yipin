@@ -48,7 +48,7 @@ async def generate_demo_scripts(
 - 只返回JSON，不要其他文字"""
 
     headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key}",
+        "Authorization": f"Bearer {settings.openrouter_api_key.strip()}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -100,7 +100,7 @@ async def generate_demo_audio(text: str) -> bytes | None:
     }
 
     headers = {
-        "Authorization": f"Bearer {settings.minimax_api_key}",
+        "Authorization": f"Bearer {settings.minimax_api_key.strip()}",
         "Content-Type": "application/json",
     }
 
