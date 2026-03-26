@@ -14,13 +14,11 @@ Endpoints:
 
 import base64
 import logging
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-
-from src.db.models import init_db
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +26,14 @@ app = FastAPI(title="邑品引擎 - AI千川代投平台", version="0.2.0")
 
 STATIC_DIR = Path(__file__).parent / "static"
 
+# Vercel serverless: use /tmp for writable SQLite
+if os.environ.get("VERCEL"):
+    os.environ.setdefault("DATABASE_URL", "sqlite:////tmp/yipin.db")
+
 
 @app.on_event("startup")
 async def startup():
+    from src.db.models import init_db
     init_db()
 
 
