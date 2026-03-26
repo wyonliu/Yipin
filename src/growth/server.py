@@ -64,13 +64,16 @@ async def demo_scripts(request: Request):
     if not product_name:
         return JSONResponse({"error": "product_name is required"}, status_code=400)
 
-    scripts = await generate_demo_scripts(
-        product_name=product_name,
-        selling_points=selling_points,
-        price=price,
-        category=category,
-    )
-    return {"scripts": scripts, "count": len(scripts)}
+    try:
+        scripts = await generate_demo_scripts(
+            product_name=product_name,
+            selling_points=selling_points,
+            price=price,
+            category=category,
+        )
+        return {"scripts": scripts, "count": len(scripts)}
+    except Exception as e:
+        return JSONResponse({"error": str(e), "type": type(e).__name__}, status_code=500)
 
 
 @app.post("/api/demo/audio")
@@ -137,4 +140,11 @@ async def oauth_callback(code: str = "", state: str = ""):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "yipin-engine"}
+    from config.settings import settings
+    return {
+        "status": "ok",
+        "service": "yipin-engine",
+        "has_openrouter_key": bool(settings.openrouter_api_key),
+        "model": settings.openrouter_model,
+        "db_url": settings.database_url[:30],
+    }
