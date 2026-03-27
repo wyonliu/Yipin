@@ -136,6 +136,76 @@ async def oauth_callback(code: str = "", state: str = ""):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+# ---- SEO Articles ----
+
+@app.get("/articles", response_class=HTMLResponse)
+async def articles_index():
+    """List all SEO articles."""
+    import json
+    idx_path = STATIC_DIR / "seo" / "index.json"
+    if not idx_path.exists():
+        return HTMLResponse("<h1>文章列表</h1><p>暂无文章</p>")
+    articles = json.loads(idx_path.read_text(encoding="utf-8"))
+    links = "".join(
+        f'<li><a href="/articles/{a["slug"]}">{a["title"]}</a></li>'
+        for a in articles
+    )
+    return HTMLResponse(f"""<!DOCTYPE html><html lang="zh"><head>
+<meta charset="utf-8"><title>千川投流干货 - 邑品引擎</title>
+<style>body{{font-family:system-ui;max-width:800px;margin:0 auto;padding:20px;background:#0a0a16;color:#e0e0e0}}
+a{{color:#c8a96e}}h1{{color:#c8a96e}}</style>
+</head><body><h1>千川投流干货文章</h1><ul>{links}</ul>
+<p><a href="/">← 返回首页</a></p></body></html>""")
+
+
+@app.get("/articles/{slug}", response_class=HTMLResponse)
+async def article_page(slug: str):
+    """Serve an individual SEO article."""
+    html_path = STATIC_DIR / "seo" / f"{slug}.html"
+    if html_path.exists():
+        return HTMLResponse(html_path.read_text(encoding="utf-8"))
+    return JSONResponse({"error": "article not found"}, status_code=404)
+
+
+# ---- Merchant Dashboard API ----
+
+@app.get("/api/merchant/{merchant_id}/status")
+async def merchant_status(merchant_id: str):
+    """Get merchant status and stats."""
+    from src.common.tenant import get_merchant, get_merchant_products
+    merchant = get_merchant(merchant_id)
+    if not merchant:
+        return JSONResponse({"error": "merchant not found"}, status_code=404)
+    products = get_merchant_products(merchant_id)
+    return {
+        "merchant_id": merchant.id,
+        "name": merchant.name,
+        "status": merchant.status,
+        "products": len(products),
+        "created_at": str(merchant.created_at),
+    }
+
+
+@app.get("/api/merchants")
+async def list_merchants():
+    """List all merchants (admin view)."""
+    from src.db.models import get_session, Merchant
+    with get_session() as session:
+        merchants = session.query(Merchant).all()
+        return {
+            "merchants": [
+                {
+                    "id": m.id,
+                    "name": m.name,
+                    "status": m.status,
+                    "created_at": str(m.created_at),
+                }
+                for m in merchants
+            ],
+            "total": len(merchants),
+        }
+
+
 # ---- Health ----
 
 @app.get("/api/health")
