@@ -206,6 +206,36 @@ async def list_merchants():
         }
 
 
+# ---- Billing ----
+
+@app.post("/api/billing/calculate")
+async def calculate_billing(request: Request):
+    """Calculate billing for a merchant (admin)."""
+    from src.growth.billing import calculate_merchant_billing
+    body = await request.json()
+    result = calculate_merchant_billing(
+        merchant_id=body.get("merchant_id", ""),
+        total_spend=body.get("total_spend", 0),
+        total_gmv=body.get("total_gmv", 0),
+        total_orders=body.get("total_orders", 0),
+    )
+    return result
+
+
+@app.get("/api/billing/{merchant_id}")
+async def get_billing(merchant_id: str):
+    """Get billing summary for a merchant."""
+    from src.growth.billing import get_merchant_billing_summary
+    return get_merchant_billing_summary(merchant_id)
+
+
+@app.post("/api/billing/simulate/{merchant_id}")
+async def simulate_billing(merchant_id: str):
+    """Simulate a billing cycle with mock data (for testing)."""
+    from src.growth.billing import simulate_billing_cycle
+    return simulate_billing_cycle(merchant_id)
+
+
 # ---- Health ----
 
 @app.get("/api/health")
