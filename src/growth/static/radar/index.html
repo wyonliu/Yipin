@@ -1594,8 +1594,6 @@ document.getElementById('locationInput').addEventListener('keydown', function(e)
     if (val) {
       var city = document.getElementById('citySelect').value;
       geocodeAndPan(val, city);
-      // Also trigger scan
-      startScan();
     }
   }
 });

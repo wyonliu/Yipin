@@ -139,7 +139,7 @@ async def analyze_location_traffic(
         category_results[cat_name] = {
             "count": count,
             "weighted": round(weighted, 1),
-            "examples": [p.get("name", "") for p in pois[:3]],
+            "examples": [p.get("name", "") for p in pois],
         }
 
     # Normalize to 0-100 score
