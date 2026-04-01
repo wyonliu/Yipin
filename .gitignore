@@ -11,3 +11,4 @@ workspace/
 *.mp4
 *.wav
 .DS_Store
+.vercel

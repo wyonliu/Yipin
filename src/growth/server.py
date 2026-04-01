@@ -236,6 +236,40 @@ async def simulate_billing(merchant_id: str):
     return simulate_billing_cycle(merchant_id)
 
 
+# ---- YipinRadar (邑品雷达) ----
+
+@app.get("/radar", response_class=HTMLResponse)
+async def radar_page():
+    """Serve the YipinRadar foot traffic analysis app."""
+    html_path = STATIC_DIR / "radar" / "index.html"
+    if html_path.exists():
+        return HTMLResponse(html_path.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>邑品雷达 — Coming Soon</h1>")
+
+
+# ---- Foot Traffic Monitoring ----
+
+@app.get("/api/traffic/analyze")
+async def traffic_analyze(location: str = "华星发展大厦", city: str = "杭州", radius: int = 500):
+    """Full traffic analysis with category breakdown and hourly estimates."""
+    from src.growth.foot_traffic import analyze_location_traffic
+    return await analyze_location_traffic(location_name=location, city=city, radius_m=radius)
+
+
+@app.get("/api/traffic/snapshot")
+async def traffic_snapshot(location: str = "华星发展大厦", city: str = "杭州"):
+    """Take a foot traffic snapshot and save to disk."""
+    from src.growth.foot_traffic import monitor_24h
+    return await monitor_24h(location_name=location, city=city)
+
+
+@app.get("/api/traffic/summary")
+async def traffic_summary(date: str = ""):
+    """Get daily foot traffic summary."""
+    from src.growth.foot_traffic import generate_daily_summary
+    return generate_daily_summary(date or None)
+
+
 # ---- Health ----
 
 @app.get("/api/health")

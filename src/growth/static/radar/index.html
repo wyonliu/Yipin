@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邑品雷达 · YipinRadar</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a16;
+  --bg2: #12122a;
+  --bg3: #1a1a3e;
+  --gold: #c8a96e;
+  --gold-dim: rgba(200, 169, 110, 0.3);
+  --gold-glow: rgba(200, 169, 110, 0.15);
+  --blue: #4a9eff;
+  --blue-dim: rgba(74, 158, 255, 0.2);
+  --text: #e8e4dc;
+  --text-dim: #8a8696;
+  --red: #ff5c5c;
+  --orange: #ff9a3c;
+  --yellow: #ffd23c;
+  --green: #4adf7c;
+  --radius: 12px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+
+/* ── Utilities ── */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Hero Header ── */
+.hero {
+  text-align: center;
+  padding: 60px 24px 40px;
+  position: relative;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.radar-icon {
+  width: 52px; height: 52px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-icon .dot {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  position: absolute;
+  z-index: 2;
+}
+
+.radar-icon .ring {
+  position: absolute;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  opacity: 0;
+  animation: radarPulse 2.4s ease-out infinite;
+}
+
+.radar-icon .ring:nth-child(2) { animation-delay: 0s; }
+.radar-icon .ring:nth-child(3) { animation-delay: 0.8s; }
+.radar-icon .ring:nth-child(4) { animation-delay: 1.6s; }
+
+@keyframes radarPulse {
+  0% { width: 8px; height: 8px; opacity: 0.9; }
+  100% { width: 52px; height: 52px; opacity: 0; }
+}
+
+.logo-text {
+  font-size: 40px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--gold), #e8d5a8, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 4px;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+}
+
+.glow-line {
+  width: 200px;
+  height: 2px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border-radius: 1px;
+  box-shadow: 0 0 12px var(--gold-dim);
+}
+
+/* ── Search Panel ── */
+.search-panel {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 32px;
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+
+.search-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-row input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 14px 18px;
+  background: var(--bg);
+  border: 1px solid rgba(200, 169, 110, 0.2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.search-row input[type="text"]:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.search-row input[type="text"]::placeholder { color: var(--text-dim); }
+
+.search-row select {
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid rgba(200, 169, 110, 0.2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8696' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.search-row select:focus { border-color: var(--gold); }
+
+.radius-section {
+  margin-bottom: 24px;
+}
+
+.radius-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.radius-value {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.radius-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.radius-track input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-dim));
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.radius-track input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--gold-dim);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.radius-track input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+.radius-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.scan-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--gold), #b8964e);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.scan-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(200, 169, 110, 0.4);
+}
+
+.scan-btn:active { transform: translateY(0); }
+
+.scan-btn.loading {
+  pointer-events: none;
+  background: linear-gradient(135deg, #8a7a50, #6a5a3a);
+}
+
+.scan-btn .sweep {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: sweep 1.5s ease-in-out infinite;
+  display: none;
+}
+
+.scan-btn.loading .sweep { display: block; }
+
+@keyframes sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  position: relative;
+}
+
+.empty-radar {
+  width: 180px; height: 180px;
+  margin: 0 auto 32px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-radar .grid-ring {
+  position: absolute;
+  border: 1px solid rgba(200, 169, 110, 0.08);
+  border-radius: 50%;
+}
+
+.empty-radar .grid-ring:nth-child(1) { width: 60px; height: 60px; }
+.empty-radar .grid-ring:nth-child(2) { width: 120px; height: 120px; }
+.empty-radar .grid-ring:nth-child(3) { width: 180px; height: 180px; }
+
+.empty-radar .crosshair {
+  position: absolute;
+  background: rgba(200, 169, 110, 0.06);
+}
+
+.empty-radar .crosshair.h { width: 180px; height: 1px; }
+.empty-radar .crosshair.v { width: 1px; height: 180px; }
+
+.empty-radar .scan-line {
+  position: absolute;
+  width: 90px; height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+  transform-origin: left center;
+  left: 50%; top: 50%;
+  margin-top: -1px;
+  animation: radarSpin 3s linear infinite;
+  opacity: 0.5;
+}
+
+.empty-radar .scan-cone {
+  position: absolute;
+  width: 90px; height: 90px;
+  left: 50%; top: 50%;
+  transform-origin: 0 0;
+  background: conic-gradient(from 0deg, rgba(200, 169, 110, 0.12), transparent 60deg);
+  animation: radarSpin 3s linear infinite;
+  border-radius: 0 90px 0 0;
+}
+
+@keyframes radarSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.empty-radar .center-dot {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 12px var(--gold-dim);
+}
+
+.empty-title {
+  font-size: 20px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: rgba(138, 134, 150, 0.6);
+}
+
+/* ── Results Dashboard ── */
+.results {
+  display: none;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  padding-bottom: 40px;
+}
+
+.results.visible {
+  display: block;
+}
+
+.results.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.results-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.results-location {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.results-address {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+/* ── Score Card ── */
+.score-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 48px;
+}
+
+.score-card {
+  text-align: center;
+  position: relative;
+}
+
+.gauge-wrap {
+  width: 200px; height: 200px;
+  margin: 0 auto 16px;
+  position: relative;
+}
+
+.gauge-wrap canvas {
+  width: 200px; height: 200px;
+}
+
+.gauge-value {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.gauge-number {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.gauge-label-small {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.traffic-level {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.traffic-desc {
+  font-size: 14px;
+  color: var(--text-dim);
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* ── Charts Row ── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.chart-box {
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.1);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-title::before {
+  content: '';
+  width: 4px; height: 16px;
+  background: var(--gold);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.chart-canvas-wrap canvas {
+  width: 100%;
+  display: block;
+}
+
+.chart-tooltip {
+  position: absolute;
+  background: rgba(10, 10, 22, 0.95);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.chart-tooltip.show { opacity: 1; }
+
+/* ── POI Cards ── */
+.poi-section {
+  margin-bottom: 40px;
+}
+
+.poi-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poi-section-title::before {
+  content: '';
+  width: 4px; height: 16px;
+  background: var(--gold);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.poi-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scroll-snap-type: x mandatory;
+}
+
+.poi-card {
+  min-width: 200px;
+  max-width: 220px;
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.08);
+  border-radius: var(--radius);
+  padding: 20px;
+  scroll-snap-align: start;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  opacity: 0;
+  transform: translateY(20px);
+  flex-shrink: 0;
+}
+
+.poi-card.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.poi-card:hover {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 20px rgba(200, 169, 110, 0.08);
+  transform: translateY(-4px);
+}
+
+.poi-icon { font-size: 28px; margin-bottom: 8px; }
+
+.poi-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.poi-count {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.poi-count span {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.poi-examples {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+.poi-examples span {
+  display: inline-block;
+  background: rgba(200, 169, 110, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 4px 2px 0;
+}
+
+/* ── Location Badge ── */
+.loc-badge {
+  text-align: center;
+  padding: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.loc-badge span { margin: 0 8px; }
+
+/* ── Error State ── */
+.error-box {
+  display: none;
+  max-width: 480px;
+  margin: 40px auto;
+  padding: 24px;
+  background: rgba(255, 92, 92, 0.08);
+  border: 1px solid rgba(255, 92, 92, 0.2);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.error-box.show { display: block; }
+
+.error-icon { font-size: 36px; margin-bottom: 8px; }
+
+.error-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+
+.error-msg {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 40px 24px;
+  border-top: 1px solid rgba(200, 169, 110, 0.06);
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.footer .f-brand { color: var(--gold); font-weight: 600; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .hero { padding: 40px 16px 24px; }
+  .logo-text { font-size: 28px; }
+  .subtitle { font-size: 13px; }
+  .search-panel { padding: 20px; margin: 24px 16px; }
+  .search-row { flex-direction: column; }
+  .charts-row { grid-template-columns: 1fr; }
+  .gauge-wrap { width: 160px; height: 160px; }
+  .gauge-wrap canvas { width: 160px; height: 160px; }
+  .gauge-number { font-size: 40px; }
+  .poi-card { min-width: 170px; }
+  .container { padding: 0 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero Header -->
+<header class="hero">
+  <div class="logo-row">
+    <div class="radar-icon">
+      <div class="dot"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+    </div>
+    <div class="logo-text">邑品雷达</div>
+  </div>
+  <div class="subtitle">AI选址决策引擎 · 一键扫描商圈人流</div>
+  <div class="glow-line"></div>
+</header>
+
+<!-- Search Panel -->
+<section class="search-panel">
+  <div class="search-row">
+    <input type="text" id="locationInput" placeholder="输入地址或商圈名，如：华星发展大厦">
+    <select id="citySelect">
+      <option value="杭州">杭州</option>
+      <option value="北京">北京</option>
+      <option value="上海">上海</option>
+      <option value="深圳">深圳</option>
+      <option value="广州">广州</option>
+      <option value="成都">成都</option>
+      <option value="武汉">武汉</option>
+      <option value="南京">南京</option>
+      <option value="重庆">重庆</option>
+      <option value="西安">西安</option>
+    </select>
+  </div>
+  <div class="radius-section">
+    <div class="radius-label">
+      <span>扫描半径</span>
+      <span class="radius-value" id="radiusDisplay">500m</span>
+    </div>
+    <div class="radius-track">
+      <input type="range" id="radiusSlider" min="0" max="3" step="1" value="1">
+    </div>
+    <div class="radius-ticks">
+      <span>300m</span><span>500m</span><span>800m</span><span>1000m</span>
+    </div>
+  </div>
+  <button class="scan-btn" id="scanBtn" onclick="startScan()">
+    <span class="sweep"></span>
+    <span class="btn-text">开始扫描</span>
+  </button>
+</section>
+
+<!-- Error -->
+<div class="error-box" id="errorBox">
+  <div class="error-icon">&#9888;&#65039;</div>
+  <div class="error-title">扫描失败</div>
+  <div class="error-msg" id="errorMsg">请检查网络连接后重试</div>
+</div>
+
+<!-- Empty State -->
+<div class="empty-state" id="emptyState">
+  <div class="empty-radar">
+    <div class="grid-ring"></div>
+    <div class="grid-ring"></div>
+    <div class="grid-ring"></div>
+    <div class="crosshair h"></div>
+    <div class="crosshair v"></div>
+    <div class="scan-cone"></div>
+    <div class="scan-line"></div>
+    <div class="center-dot"></div>
+  </div>
+  <div class="empty-title">等待扫描指令</div>
+  <div class="empty-desc">输入目标地址，启动雷达扫描商圈人流数据</div>
+</div>
+
+<!-- Results Dashboard -->
+<div class="results" id="results">
+  <div class="container">
+    <div class="results-header">
+      <div class="results-location" id="resLocation"></div>
+      <div class="results-address" id="resAddress"></div>
+    </div>
+
+    <div class="score-section">
+      <div class="score-card">
+        <div class="gauge-wrap">
+          <canvas id="gaugeCanvas" width="400" height="400"></canvas>
+          <div class="gauge-value">
+            <div class="gauge-number" id="gaugeNumber">0</div>
+            <div class="gauge-label-small">人流指数</div>
+          </div>
+        </div>
+        <div class="traffic-level" id="trafficLevel"></div>
+        <div class="traffic-desc" id="trafficDesc"></div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="chart-title">商圈业态分布</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="radarCanvas" width="600" height="500"></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">24小时人流曲线</div>
+        <div class="chart-canvas-wrap" style="position:relative">
+          <canvas id="hourlyCanvas" width="700" height="500"></canvas>
+          <div class="chart-tooltip" id="hourlyTooltip"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="poi-section">
+      <div class="poi-section-title">周边业态详情</div>
+      <div class="poi-scroll" id="poiScroll"></div>
+    </div>
+
+    <div class="loc-badge" id="locBadge"></div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <span class="f-brand">邑品雷达 · YipinRadar</span><br>
+  Powered by 邑品引擎
+</footer>
+
+<script>
+/* ── State ── */
+const RADIUS_MAP = [300, 500, 800, 1000];
+const CATEGORY_ICONS = {
+  '餐饮': '🍜', '小吃奶茶': '🧋', '超市便利': '🏪', '商场': '🏬',
+  '咖啡休闲': '☕', '地铁公交': '🚇', '写字楼': '🏢', '银行': '🏦'
+};
+const CATEGORY_KEYS = ['餐饮', '小吃奶茶', '超市便利', '商场', '咖啡休闲', '地铁公交', '写字楼', '银行'];
+
+let currentData = null;
+
+/* ── Radius Slider ── */
+const radiusSlider = document.getElementById('radiusSlider');
+const radiusDisplay = document.getElementById('radiusDisplay');
+radiusSlider.addEventListener('input', () => {
+  radiusDisplay.textContent = RADIUS_MAP[radiusSlider.value] + 'm';
+});
+
+/* ── Scan ── */
+async function startScan() {
+  const location = document.getElementById('locationInput').value.trim();
+  if (!location) {
+    document.getElementById('locationInput').focus();
+    document.getElementById('locationInput').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('locationInput').style.borderColor = '', 1500);
+    return;
+  }
+
+  const city = document.getElementById('citySelect').value;
+  const radius = RADIUS_MAP[radiusSlider.value];
+  const btn = document.getElementById('scanBtn');
+  const btnText = btn.querySelector('.btn-text');
+
+  // Loading state
+  btn.classList.add('loading');
+  btnText.textContent = '扫描中...';
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('emptyState').style.display = 'none';
+
+  try {
+    const url = `/api/traffic/analyze?location=${encodeURIComponent(location)}&city=${encodeURIComponent(city)}&radius=${radius}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`服务返回错误 (${resp.status})`);
+    const data = await resp.json();
+    currentData = data;
+    renderResults(data);
+  } catch (e) {
+    document.getElementById('errorBox').classList.add('show');
+    document.getElementById('errorMsg').textContent = e.message || '请检查网络连接后重试';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('emptyState').style.display = '';
+  } finally {
+    btn.classList.remove('loading');
+    btnText.textContent = '开始扫描';
+  }
+}
+
+/* Allow Enter key */
+document.getElementById('locationInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startScan();
+});
+
+/* ── Render Results ── */
+function renderResults(data) {
+  const el = document.getElementById('results');
+  el.style.display = 'block';
+  el.classList.remove('animate-in');
+
+  document.getElementById('resLocation').textContent = data.location;
+  document.getElementById('resAddress').textContent = data.address;
+  document.getElementById('emptyState').style.display = 'none';
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    el.classList.add('visible');
+    requestAnimationFrame(() => el.classList.add('animate-in'));
+  });
+
+  // Score gauge
+  animateGauge(data.traffic_score);
+  document.getElementById('trafficLevel').textContent = '人流等级：' + data.traffic_level;
+  document.getElementById('trafficLevel').style.color = scoreColor(data.traffic_score);
+  document.getElementById('trafficDesc').textContent = data.traffic_desc;
+
+  // Charts
+  setTimeout(() => drawRadarChart(data.category_breakdown), 300);
+  setTimeout(() => drawHourlyChart(data.hourly_estimate, data.current_hour, data.peak_hours), 400);
+
+  // POI cards
+  renderPoiCards(data.category_breakdown);
+
+  // Badge
+  document.getElementById('locBadge').innerHTML =
+    `${data.lat.toFixed(6)}, ${data.lng.toFixed(6)}<span>|</span>${data.timestamp}<span>|</span>${data.data_source}`;
+
+  // Scroll to results
+  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+}
+
+/* ── Score Color ── */
+function scoreColor(s) {
+  if (s < 20) return 'var(--red)';
+  if (s < 40) return 'var(--orange)';
+  if (s < 60) return 'var(--yellow)';
+  if (s < 80) return 'var(--green)';
+  return 'var(--gold)';
+}
+
+function scoreColorRaw(s) {
+  if (s < 20) return '#ff5c5c';
+  if (s < 40) return '#ff9a3c';
+  if (s < 60) return '#ffd23c';
+  if (s < 80) return '#4adf7c';
+  return '#c8a96e';
+}
+
+/* ── Gauge Animation ── */
+function animateGauge(target) {
+  const canvas = document.getElementById('gaugeCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w / 2, cy = h / 2;
+  const r = 170;
+  const lineW = 18;
+  const startAngle = Math.PI * 0.75;
+  const totalAngle = Math.PI * 1.5;
+
+  let current = 0;
+  const numEl = document.getElementById('gaugeNumber');
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Background arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, startAngle + totalAngle, false);
+    ctx.strokeStyle = 'rgba(200, 169, 110, 0.08)';
+    ctx.lineWidth = lineW;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Value arc
+    const frac = current / 100;
+    const endAngle = startAngle + totalAngle * frac;
+    if (current > 0) {
+      const grad = ctx.createConicGradient(startAngle, cx, cy);
+      // We'll use a linear approach instead
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle, false);
+      ctx.strokeStyle = scoreColorRaw(current);
+      ctx.lineWidth = lineW;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle, false);
+      ctx.strokeStyle = scoreColorRaw(current) + '40';
+      ctx.lineWidth = lineW + 12;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Tick marks
+    for (let i = 0; i <= 10; i++) {
+      const angle = startAngle + (totalAngle * i / 10);
+      const inner = r - lineW / 2 - 8;
+      const outer = r - lineW / 2 - 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+      ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.15)';
+      ctx.lineWidth = i % 5 === 0 ? 2 : 1;
+      ctx.stroke();
+    }
+
+    numEl.textContent = Math.round(current);
+    numEl.style.color = scoreColorRaw(Math.round(current));
+
+    if (current < target) {
+      current += Math.max(0.5, (target - current) * 0.06);
+      if (target - current < 0.5) current = target;
+      requestAnimationFrame(draw);
+    }
+  }
+
+  current = 0;
+  draw();
+}
+
+/* ── Radar Chart ── */
+function drawRadarChart(categories) {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w / 2, cy = h / 2 + 10;
+  const maxR = Math.min(w, h) * 0.35;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const axes = CATEGORY_KEYS;
+  const n = axes.length;
+  const angleStep = (Math.PI * 2) / n;
+
+  // Find max for normalization
+  let maxCount = 0;
+  axes.forEach(k => { if (categories[k]) maxCount = Math.max(maxCount, categories[k].count); });
+  if (maxCount === 0) maxCount = 1;
+
+  // Grid rings
+  for (let ring = 1; ring <= 4; ring++) {
+    const rr = maxR * ring / 4;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const angle = -Math.PI / 2 + angleStep * i;
+      const x = cx + Math.cos(angle) * rr;
+      const y = cy + Math.sin(angle) * rr;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(200, 169, 110, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axis lines
+  for (let i = 0; i < n; i++) {
+    const angle = -Math.PI / 2 + angleStep * i;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
+    ctx.strokeStyle = 'rgba(200, 169, 110, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Animate data polygon
+  let progress = 0;
+
+  function drawFrame() {
+    // Clear only data layer by redrawing grid (we'll draw all each frame)
+    ctx.clearRect(0, 0, w, h);
+
+    // Redraw grid
+    for (let ring = 1; ring <= 4; ring++) {
+      const rr = maxR * ring / 4;
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const angle = -Math.PI / 2 + angleStep * i;
+        const x = cx + Math.cos(angle) * rr;
+        const y = cy + Math.sin(angle) * rr;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < n; i++) {
+      const angle = -Math.PI / 2 + angleStep * i;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Data polygon
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const cat = categories[axes[i]];
+      const val = cat ? cat.count / maxCount : 0;
+      const r = (maxR * 0.15 + maxR * 0.85 * val) * progress;
+      const angle = -Math.PI / 2 + angleStep * i;
+      pts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+    }
+
+    // Fill
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(200, 169, 110, 0.12)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200, 169, 110, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Dots
+    pts.forEach((p) => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#c8a96e';
+      ctx.fill();
+    });
+
+    // Labels
+    ctx.font = '600 24px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let i = 0; i < n; i++) {
+      const angle = -Math.PI / 2 + angleStep * i;
+      const labelR = maxR + 40;
+      const lx = cx + Math.cos(angle) * labelR;
+      const ly = cy + Math.sin(angle) * labelR;
+
+      ctx.fillStyle = '#e8e4dc';
+      ctx.font = '600 22px system-ui';
+      ctx.fillText(axes[i], lx, ly - 12);
+
+      const cat = categories[axes[i]];
+      const count = cat ? cat.count : 0;
+      ctx.fillStyle = '#c8a96e';
+      ctx.font = '700 24px system-ui';
+      ctx.fillText(count.toString(), lx, ly + 14);
+    }
+
+    if (progress < 1) {
+      progress += 0.03;
+      if (progress > 1) progress = 1;
+      requestAnimationFrame(drawFrame);
+    }
+  }
+
+  progress = 0;
+  drawFrame();
+}
+
+/* ── Hourly Chart ── */
+function drawHourlyChart(hourly, currentHour, peakHours) {
+  const canvas = document.getElementById('hourlyCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  const padLeft = 50, padRight = 20, padTop = 20, padBottom = 50;
+  const chartW = w - padLeft - padRight;
+  const chartH = h - padTop - padBottom;
+
+  const hours = [];
+  const values = [];
+  for (let i = 0; i < 24; i++) {
+    hours.push(i);
+    values.push(hourly[i.toString()] || 0);
+  }
+  const maxVal = Math.max(...values, 1);
+
+  function xPos(i) { return padLeft + (i / 23) * chartW; }
+  function yPos(v) { return padTop + chartH - (v / maxVal) * chartH; }
+
+  let progress = 0;
+
+  // Tooltip tracking
+  const tooltip = document.getElementById('hourlyTooltip');
+  canvas.onmousemove = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+    let closest = -1, closestDist = Infinity;
+    for (let i = 0; i < 24; i++) {
+      const dx = Math.abs(mx - xPos(i));
+      if (dx < closestDist) { closestDist = dx; closest = i; }
+    }
+
+    if (closest >= 0 && closestDist < chartW / 24 + 10) {
+      const tipX = (xPos(closest) / canvas.width) * rect.width;
+      const tipY = (yPos(values[closest]) / canvas.height) * rect.height;
+      tooltip.style.left = tipX + 'px';
+      tooltip.style.top = (tipY - 40) + 'px';
+      tooltip.textContent = `${closest}:00 — 人流指数 ${values[closest]}`;
+      tooltip.classList.add('show');
+    } else {
+      tooltip.classList.remove('show');
+    }
+  };
+  canvas.onmouseleave = () => tooltip.classList.remove('show');
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Y axis grid
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const v = (maxVal / ySteps) * i;
+      const y = yPos(v);
+      ctx.beginPath();
+      ctx.moveTo(padLeft, y);
+      ctx.lineTo(w - padRight, y);
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#8a8696';
+      ctx.font = '22px system-ui';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(Math.round(v).toString(), padLeft - 10, y);
+    }
+
+    // X axis labels
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = '22px system-ui';
+    for (let i = 0; i < 24; i += 3) {
+      ctx.fillStyle = '#8a8696';
+      ctx.fillText(i + ':00', xPos(i), padTop + chartH + 14);
+    }
+
+    // How many points to draw based on progress
+    const numPts = Math.min(24, Math.floor(progress * 24) + 1);
+
+    // Smooth curve helper using cardinal spline
+    function getSplinePoints(pts, tension) {
+      tension = tension || 0.4;
+      const result = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(0, i - 1)];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[Math.min(pts.length - 1, i + 2)];
+
+        const nSeg = 16;
+        for (let t = 0; t < nSeg; t++) {
+          const s = t / nSeg;
+          const s2 = s * s, s3 = s2 * s;
+          const h1 = 2 * s3 - 3 * s2 + 1;
+          const h2 = -2 * s3 + 3 * s2;
+          const h3 = s3 - 2 * s2 + s;
+          const h4 = s3 - s2;
+
+          const tx = (p2.x - p0.x) * tension;
+          const ty = (p2.y - p0.y) * tension;
+          const tx2 = (p3.x - p1.x) * tension;
+          const ty2 = (p3.y - p1.y) * tension;
+
+          result.push({
+            x: h1 * p1.x + h2 * p2.x + h3 * tx + h4 * tx2,
+            y: h1 * p1.y + h2 * p2.y + h3 * ty + h4 * ty2
+          });
+        }
+      }
+      if (pts.length > 0) result.push(pts[pts.length - 1]);
+      return result;
+    }
+
+    const rawPts = [];
+    for (let i = 0; i < numPts; i++) {
+      rawPts.push({ x: xPos(i), y: yPos(values[i]) });
+    }
+
+    if (rawPts.length >= 2) {
+      const smooth = getSplinePoints(rawPts, 0.35);
+
+      // Gradient fill
+      const grad = ctx.createLinearGradient(0, padTop, 0, padTop + chartH);
+      grad.addColorStop(0, 'rgba(200, 169, 110, 0.25)');
+      grad.addColorStop(1, 'rgba(200, 169, 110, 0.01)');
+
+      ctx.beginPath();
+      ctx.moveTo(smooth[0].x, padTop + chartH);
+      ctx.lineTo(smooth[0].x, smooth[0].y);
+      smooth.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(smooth[smooth.length - 1].x, padTop + chartH);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Line
+      ctx.beginPath();
+      ctx.moveTo(smooth[0].x, smooth[0].y);
+      smooth.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.strokeStyle = '#c8a96e';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // Peak hour markers (only if fully drawn)
+    if (progress >= 1 && peakHours) {
+      peakHours.forEach(hr => {
+        if (hr < 24) {
+          const px = xPos(hr), py = yPos(values[hr]);
+          // Golden triangle
+          ctx.beginPath();
+          ctx.moveTo(px, py - 14);
+          ctx.lineTo(px - 7, py - 4);
+          ctx.lineTo(px + 7, py - 4);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(200, 169, 110, 0.7)';
+          ctx.fill();
+        }
+      });
+    }
+
+    // Current hour pulsing dot (only if fully drawn)
+    if (progress >= 1 && currentHour != null && currentHour < 24) {
+      const px = xPos(currentHour), py = yPos(values[currentHour]);
+      const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 12, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(74, 158, 255, ${0.15 * pulse})`;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#4a9eff';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+
+      // Keep animating the pulse
+      requestAnimationFrame(draw);
+      return;
+    }
+
+    if (progress < 1) {
+      progress += 0.04;
+      if (progress > 1) progress = 1;
+      requestAnimationFrame(draw);
+    }
+  }
+
+  progress = 0;
+  draw();
+}
+
+/* ── POI Cards ── */
+function renderPoiCards(categories) {
+  const container = document.getElementById('poiScroll');
+  container.innerHTML = '';
+
+  const entries = CATEGORY_KEYS
+    .filter(k => categories[k] && categories[k].count > 0)
+    .map(k => ({ key: k, ...categories[k] }));
+
+  entries.forEach((cat, idx) => {
+    const card = document.createElement('div');
+    card.className = 'poi-card';
+    card.style.transition = `opacity 0.5s ease ${idx * 0.08}s, transform 0.5s ease ${idx * 0.08}s`;
+
+    const examples = (cat.examples || []).slice(0, 3).map(e => `<span>${e}</span>`).join('');
+    card.innerHTML = `
+      <div class="poi-icon">${CATEGORY_ICONS[cat.key] || '📍'}</div>
+      <div class="poi-name">${cat.key}</div>
+      <div class="poi-count">${cat.count} <span>家</span></div>
+      <div class="poi-examples">${examples || '<span style="opacity:0.4">暂无数据</span>'}</div>
+    `;
+    container.appendChild(card);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => card.classList.add('animate-in'));
+    });
+  });
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);padding:24px;font-size:14px;">该区域暂无检测到相关业态</div>';
+  }
+}
+</script>
+</body>
+</html>

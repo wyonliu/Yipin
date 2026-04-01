@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     minimax_tts_voice: str = "male-qn-qingse"  # 清澈男声, good for food ads
     minimax_tts_url: str = "https://api.minimax.chat/v1/t2a_v2"
 
+    # Baidu Maps (for foot traffic monitoring)
+    baidu_map_ak: str = ""
+
     # Legacy (kept for backward compat in tests)
     anthropic_api_key: str = ""
 
