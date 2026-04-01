@@ -60,8 +60,8 @@ def _get_baidu_ak() -> str:
 
 async def _search_pois(
     ak: str, query: str, lat: float, lng: float, radius: int = 500
-) -> list[dict]:
-    """Search for POIs near a location."""
+) -> tuple[list[dict], int]:
+    """Search for POIs near a location. Returns (examples, total_count)."""
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(
             "https://api.map.baidu.com/place/v2/search",
@@ -77,8 +77,11 @@ async def _search_pois(
         resp.raise_for_status()
         data = resp.json()
     if data.get("status") != 0:
-        return []
-    return data.get("results", [])
+        return [], 0
+    results = data.get("results", [])
+    # Use API-reported total, fall back to len(results)
+    total = data.get("total", len(results))
+    return results, total
 
 
 async def analyze_location_traffic(
@@ -132,19 +135,18 @@ async def analyze_location_traffic(
     total_weighted_score = 0.0
 
     for cat_name, cat_info in POI_CATEGORIES.items():
-        pois = await _search_pois(ak, cat_info["query"], lat, lng, radius_m)
-        count = len(pois)
-        weighted = count * cat_info["weight"]
+        examples, total = await _search_pois(ak, cat_info["query"], lat, lng, radius_m)
+        weighted = total * cat_info["weight"]
         total_weighted_score += weighted
         category_results[cat_name] = {
-            "count": count,
+            "count": total,
             "weighted": round(weighted, 1),
-            "examples": [p.get("name", "") for p in pois],
+            "examples": [p.get("name", "") for p in examples],
         }
 
     # Normalize to 0-100 score
-    # Calibration: 50 weighted POIs in 500m = score 50 (moderate traffic)
-    traffic_score = min(100, round(total_weighted_score * 100 / 100))
+    # Calibration: 400 weighted POIs in 500m ≈ score 100 (very busy commercial district)
+    traffic_score = min(100, round(total_weighted_score * 100 / 400))
 
     # Generate 24-hour traffic estimate
     now_hour = datetime.now().hour
