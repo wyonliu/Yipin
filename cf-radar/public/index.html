@@ -1,0 +1,2606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邑品雷达 · YipinRadar</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a16;
+  --bg2: #12122a;
+  --bg3: #1a1a3e;
+  --gold: #c8a96e;
+  --gold-dim: rgba(200, 169, 110, 0.3);
+  --gold-glow: rgba(200, 169, 110, 0.15);
+  --blue: #4a9eff;
+  --blue-dim: rgba(74, 158, 255, 0.2);
+  --text: #e8e4dc;
+  --text-dim: #8a8696;
+  --red: #ff5c5c;
+  --orange: #ff9a3c;
+  --yellow: #ffd23c;
+  --green: #4adf7c;
+  --radius: 12px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+
+/* ── Utilities ── */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Hero Header ── */
+.hero {
+  text-align: center;
+  padding: 60px 24px 40px;
+  position: relative;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.radar-icon {
+  width: 52px; height: 52px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-icon .dot {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  position: absolute;
+  z-index: 2;
+}
+
+.radar-icon .ring {
+  position: absolute;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  opacity: 0;
+  animation: radarPulse 2.4s ease-out infinite;
+}
+
+.radar-icon .ring:nth-child(2) { animation-delay: 0s; }
+.radar-icon .ring:nth-child(3) { animation-delay: 0.8s; }
+.radar-icon .ring:nth-child(4) { animation-delay: 1.6s; }
+
+@keyframes radarPulse {
+  0% { width: 8px; height: 8px; opacity: 0.9; }
+  100% { width: 52px; height: 52px; opacity: 0; }
+}
+
+.logo-text {
+  font-size: 40px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--gold), #e8d5a8, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 4px;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+}
+
+.glow-line {
+  width: 200px;
+  height: 2px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border-radius: 1px;
+  box-shadow: 0 0 12px var(--gold-dim);
+}
+
+/* ── Search Panel ── */
+.search-panel {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 32px;
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+
+.search-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.search-row input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 14px 18px;
+  background: var(--bg);
+  border: 1px solid rgba(200, 169, 110, 0.2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-height: 48px;
+}
+
+.search-row input[type="text"]:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.search-row input[type="text"]::placeholder { color: var(--text-dim); }
+
+.search-row select {
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid rgba(200, 169, 110, 0.2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8696' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  min-height: 48px;
+}
+
+.search-row select:focus { border-color: var(--gold); }
+
+/* ── Map Container ── */
+.map-container {
+  width: 100%;
+  height: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(200, 169, 110, 0.15);
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.map-center-marker {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -100%);
+  z-index: 100;
+  pointer-events: none;
+  width: 40px; height: 52px;
+}
+
+.map-center-pin {
+  position: relative;
+  width: 40px; height: 52px;
+}
+
+.map-center-pin .pin-body {
+  width: 32px; height: 32px;
+  background: radial-gradient(circle at 40% 35%, #e8d5a8, #c8a96e, #a0843c);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: absolute;
+  top: 0; left: 4px;
+  box-shadow: 0 2px 12px rgba(200, 169, 110, 0.5);
+  border: 2px solid #e8d5a8;
+}
+
+.map-center-pin .pin-inner {
+  width: 12px; height: 12px;
+  background: var(--bg);
+  border-radius: 50%;
+  position: absolute;
+  top: 8px; left: 14px;
+  z-index: 2;
+}
+
+.map-center-pin .pin-pulse {
+  position: absolute;
+  bottom: -4px; left: 50%;
+  transform: translateX(-50%);
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: rgba(200, 169, 110, 0.4);
+  animation: centerPulse 2s ease-out infinite;
+}
+
+@keyframes centerPulse {
+  0% { width: 12px; height: 12px; opacity: 0.8; }
+  100% { width: 40px; height: 40px; opacity: 0; margin-left: -14px; margin-bottom: -14px; }
+}
+
+.map-address-bar {
+  background: rgba(10, 10, 22, 0.85);
+  border: 1px solid rgba(200, 169, 110, 0.15);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-address-bar .addr-icon {
+  color: var(--gold);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.map-address-bar .addr-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.radius-section {
+  margin-bottom: 24px;
+}
+
+.radius-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.radius-value {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.radius-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.radius-track input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-dim));
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.radius-track input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px; height: 28px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--gold-dim);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.radius-track input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+.radius-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.scan-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--gold), #b8964e);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  min-height: 52px;
+}
+
+.scan-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(200, 169, 110, 0.4);
+}
+
+.scan-btn:active { transform: translateY(0); }
+
+.scan-btn.loading {
+  pointer-events: none;
+  background: linear-gradient(135deg, #8a7a50, #6a5a3a);
+}
+
+.scan-btn .sweep {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: sweep 1.5s ease-in-out infinite;
+  display: none;
+}
+
+.scan-btn.loading .sweep { display: block; }
+
+@keyframes sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  position: relative;
+}
+
+.empty-radar {
+  width: 180px; height: 180px;
+  margin: 0 auto 32px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-radar .grid-ring {
+  position: absolute;
+  border: 1px solid rgba(200, 169, 110, 0.08);
+  border-radius: 50%;
+}
+
+.empty-radar .grid-ring:nth-child(1) { width: 60px; height: 60px; }
+.empty-radar .grid-ring:nth-child(2) { width: 120px; height: 120px; }
+.empty-radar .grid-ring:nth-child(3) { width: 180px; height: 180px; }
+
+.empty-radar .crosshair {
+  position: absolute;
+  background: rgba(200, 169, 110, 0.06);
+}
+
+.empty-radar .crosshair.h { width: 180px; height: 1px; }
+.empty-radar .crosshair.v { width: 1px; height: 180px; }
+
+.empty-radar .scan-line {
+  position: absolute;
+  width: 90px; height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+  transform-origin: left center;
+  left: 50%; top: 50%;
+  margin-top: -1px;
+  animation: radarSpin 3s linear infinite;
+  opacity: 0.5;
+}
+
+.empty-radar .scan-cone {
+  position: absolute;
+  width: 90px; height: 90px;
+  left: 50%; top: 50%;
+  transform-origin: 0 0;
+  background: conic-gradient(from 0deg, rgba(200, 169, 110, 0.12), transparent 60deg);
+  animation: radarSpin 3s linear infinite;
+  border-radius: 0 90px 0 0;
+}
+
+@keyframes radarSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.empty-radar .center-dot {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 12px var(--gold-dim);
+}
+
+.empty-title {
+  font-size: 20px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: rgba(138, 134, 150, 0.6);
+}
+
+/* ── Results Dashboard ── */
+.results {
+  display: none;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  padding-bottom: 40px;
+}
+
+.results.visible {
+  display: block;
+}
+
+.results.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.results-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.results-location {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.results-address {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+/* ── Score Card ── */
+.score-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 48px;
+}
+
+.score-card {
+  text-align: center;
+  position: relative;
+}
+
+.gauge-wrap {
+  width: 200px; height: 200px;
+  margin: 0 auto 16px;
+  position: relative;
+}
+
+.gauge-wrap canvas {
+  width: 200px; height: 200px;
+}
+
+.gauge-value {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.gauge-number {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.gauge-label-small {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.traffic-level {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.traffic-desc {
+  font-size: 14px;
+  color: var(--text-dim);
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* ── Results Map Section ── */
+.results-map-section {
+  margin-bottom: 40px;
+}
+
+.results-map-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.results-map-title::before {
+  content: '';
+  width: 4px; height: 16px;
+  background: var(--gold);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.results-map-container {
+  width: 100%;
+  height: 350px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(200, 169, 110, 0.15);
+}
+
+/* ── Charts Row ── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.chart-box {
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.1);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-title::before {
+  content: '';
+  width: 4px; height: 16px;
+  background: var(--gold);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.chart-canvas-wrap canvas {
+  width: 100%;
+  display: block;
+}
+
+.chart-tooltip {
+  position: absolute;
+  background: rgba(10, 10, 22, 0.95);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.chart-tooltip.show { opacity: 1; }
+
+/* ── POI Accordion Cards ── */
+.poi-section {
+  margin-bottom: 40px;
+}
+
+.poi-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poi-section-title::before {
+  content: '';
+  width: 4px; height: 16px;
+  background: var(--gold);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.poi-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poi-acc-item {
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.08);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.poi-acc-item.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.poi-acc-item.expanded {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 20px rgba(200, 169, 110, 0.08);
+}
+
+.poi-acc-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  min-height: 48px;
+  gap: 12px;
+  transition: background 0.2s;
+}
+
+.poi-acc-header:hover {
+  background: rgba(200, 169, 110, 0.04);
+}
+
+.poi-acc-icon { font-size: 24px; flex-shrink: 0; }
+
+.poi-acc-name {
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.poi-acc-count {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold);
+  margin-right: 8px;
+}
+
+.poi-acc-count span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.poi-acc-chevron {
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+  color: var(--text-dim);
+}
+
+.poi-acc-item.expanded .poi-acc-chevron {
+  transform: rotate(180deg);
+}
+
+.poi-acc-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.poi-acc-item.expanded .poi-acc-body {
+  max-height: 500px;
+}
+
+.poi-acc-list {
+  padding: 0 20px 16px 56px;
+}
+
+.poi-acc-example {
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--text-dim);
+  border-bottom: 1px solid rgba(200, 169, 110, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poi-acc-example:last-child {
+  border-bottom: none;
+}
+
+.poi-acc-example .ex-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold-dim);
+  flex-shrink: 0;
+}
+
+/* ── AI Recommendation Section ── */
+.recommend-section {
+  margin-bottom: 40px;
+  display: none;
+}
+
+.recommend-section.visible { display: block; }
+
+.recommend-title {
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 28px;
+  background: linear-gradient(135deg, var(--gold), #e8d5a8, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.recommend-btn {
+  display: block;
+  margin: 0 auto 32px;
+  padding: 16px 40px;
+  background: transparent;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  color: var(--gold);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  min-height: 52px;
+}
+
+.recommend-btn:hover {
+  background: rgba(200, 169, 110, 0.1);
+  box-shadow: 0 0 24px rgba(200, 169, 110, 0.2);
+  transform: translateY(-2px);
+}
+
+.recommend-btn:active { transform: translateY(0); }
+
+.recommend-btn.loading {
+  pointer-events: none;
+  border-color: var(--gold-dim);
+  color: var(--text-dim);
+}
+
+.recommend-btn .sweep {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(200, 169, 110, 0.1), transparent);
+  animation: sweep 1.5s ease-in-out infinite;
+  display: none;
+}
+
+.recommend-btn.loading .sweep { display: block; }
+
+.recommend-loading {
+  text-align: center;
+  padding: 40px 24px;
+  display: none;
+}
+
+.recommend-loading.visible { display: block; }
+
+.recommend-loading-text {
+  color: var(--gold);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.typing-dots {
+  display: inline-block;
+}
+
+.typing-dots span {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--gold);
+  border-radius: 50%;
+  margin: 0 2px;
+  animation: typingBounce 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-8px); opacity: 1; }
+}
+
+.recommend-content {
+  display: none;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.recommend-content.visible {
+  display: block;
+}
+
+.recommend-content.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Summary Bar */
+.rec-summary-bar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: start;
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.15);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 28px;
+}
+
+.rec-rating-badge {
+  width: 80px; height: 80px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  font-weight: 900;
+  color: var(--bg);
+  flex-shrink: 0;
+}
+
+.rec-rating-badge.grade-a { background: linear-gradient(135deg, var(--gold), #e8d5a8); }
+.rec-rating-badge.grade-b { background: linear-gradient(135deg, var(--green), #7af0a5); }
+.rec-rating-badge.grade-c { background: linear-gradient(135deg, var(--orange), #ffbe6a); }
+.rec-rating-badge.grade-d { background: linear-gradient(135deg, var(--red), #ff8a8a); }
+
+.rec-summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-summary-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.rec-summary-label {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.rec-summary-value {
+  color: var(--text);
+}
+
+.rec-overall-comment {
+  font-size: 15px;
+  color: var(--text);
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(200, 169, 110, 0.08);
+  line-height: 1.7;
+}
+
+/* Recommended Types */
+.rec-subsection {
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.rec-subsection.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.rec-subsection-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rec-subsection-title::before {
+  content: '';
+  width: 4px; height: 16px;
+  background: var(--gold);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.rec-types-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.rec-type-card {
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.1);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.rec-type-card:hover {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 20px rgba(200, 169, 110, 0.08);
+}
+
+.rec-type-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.rec-type-medal { font-size: 24px; }
+
+.rec-type-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.rec-confidence-bar {
+  height: 6px;
+  background: rgba(200, 169, 110, 0.1);
+  border-radius: 3px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.rec-confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), #e8d5a8);
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+.rec-confidence-text {
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.rec-type-reason {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.rec-type-rent {
+  font-size: 12px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.rec-type-rent strong {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* Avoid Types */
+.rec-avoid-card {
+  background: rgba(255, 92, 92, 0.06);
+  border: 1px solid rgba(255, 92, 92, 0.15);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.rec-avoid-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.rec-avoid-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 2px;
+}
+
+.rec-avoid-reason {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Key Insights */
+.rec-insight-card {
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.08);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.rec-insight-num {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--gold), #b8964e);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--bg);
+  flex-shrink: 0;
+}
+
+.rec-insight-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  padding-top: 3px;
+}
+
+/* Warnings */
+.rec-warning-card {
+  background: rgba(255, 154, 60, 0.06);
+  border: 1px solid rgba(255, 154, 60, 0.15);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.rec-warning-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.rec-warning-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  padding-top: 2px;
+}
+
+/* ── Location Badge ── */
+.loc-badge {
+  text-align: center;
+  padding: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.loc-badge span { margin: 0 8px; }
+
+/* ── Error State ── */
+.error-box {
+  display: none;
+  max-width: 480px;
+  margin: 40px auto;
+  padding: 24px;
+  background: rgba(255, 92, 92, 0.08);
+  border: 1px solid rgba(255, 92, 92, 0.2);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.error-box.show { display: block; }
+
+.error-icon { font-size: 36px; margin-bottom: 8px; }
+
+.error-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+
+.error-msg {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 40px 24px;
+  border-top: 1px solid rgba(200, 169, 110, 0.06);
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.footer .f-brand { color: var(--gold); font-weight: 600; }
+
+/* ── Custom City Dropdown ── */
+.city-dropdown { position: relative; flex-shrink: 0; }
+
+.city-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 48px;
+  background: var(--bg);
+  border: 1px solid rgba(200, 169, 110, 0.2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.3s;
+  min-width: 88px;
+  outline: none;
+}
+
+.city-btn:hover, .city-btn.open { border-color: var(--gold); }
+
+.city-btn .city-arrow {
+  color: var(--text-dim);
+  font-size: 10px;
+  transition: transform 0.2s;
+  margin-left: auto;
+}
+
+.city-btn.open .city-arrow { transform: rotate(180deg); }
+
+.city-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid rgba(200, 169, 110, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  padding: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  min-width: 148px;
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.city-popover.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.city-option {
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-dim);
+  transition: background 0.12s, color 0.12s;
+  text-align: center;
+}
+
+.city-option:hover { background: rgba(200,169,110,0.12); color: var(--text); }
+.city-option.active { color: var(--gold); background: rgba(200,169,110,0.12); font-weight: 600; }
+
+/* ── Mobile Responsive ── */
+@media (max-width: 768px) {
+  .hero { padding: 40px 16px 24px; }
+  .logo-text { font-size: 28px; letter-spacing: 2px; }
+  .subtitle { font-size: 13px; letter-spacing: 1px; }
+
+  .search-panel { padding: 20px; margin: 24px 16px; }
+  .search-row { flex-wrap: nowrap; }
+  .search-row input[type="text"] { min-width: 0; flex: 1; }
+  .city-btn { min-width: 64px; padding: 0 10px; font-size: 14px; }
+  .city-popover { right: 0; left: auto; grid-template-columns: repeat(2, 1fr); min-width: 140px; }
+
+  .map-container { height: 280px; }
+
+  .container { padding: 0 16px; }
+
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gauge-wrap { width: 160px; height: 160px; }
+  .gauge-wrap canvas { width: 160px; height: 160px; }
+  .gauge-number { font-size: 40px; }
+
+  .results-map-container { height: 250px; }
+
+  .poi-acc-header { min-height: 48px; }
+
+  .rec-types-grid { grid-template-columns: 1fr; }
+
+  .rec-summary-bar {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .rec-rating-badge {
+    margin: 0 auto;
+  }
+
+  .rec-summary-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .rec-summary-label { min-width: unset; }
+
+  .recommend-btn {
+    padding: 14px 28px;
+    font-size: 15px;
+    width: calc(100% - 32px);
+  }
+
+  .results-location { font-size: 18px; }
+  .traffic-level { font-size: 17px; }
+  .traffic-desc { font-size: 13px; }
+  .recommend-title { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero Header -->
+<header class="hero">
+  <div class="logo-row">
+    <div class="radar-icon">
+      <div class="dot"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+    </div>
+    <div class="logo-text">邑品雷达</div>
+  </div>
+  <div class="subtitle">AI选址决策引擎 · 一键扫描商圈人流</div>
+  <div class="glow-line"></div>
+</header>
+
+<!-- Search Panel -->
+<section class="search-panel">
+  <div class="search-row">
+    <input type="text" id="locationInput" placeholder="输入地址或商圈名，如：华星发展大厦">
+    <div class="city-dropdown" id="cityDropdown">
+      <button class="city-btn" id="cityBtn" type="button">
+        <span id="cityLabel">杭州</span>
+        <span class="city-arrow">▾</span>
+      </button>
+      <div class="city-popover" id="cityPopover">
+        <div class="city-option active" data-city="杭州">杭州</div>
+        <div class="city-option" data-city="北京">北京</div>
+        <div class="city-option" data-city="上海">上海</div>
+        <div class="city-option" data-city="深圳">深圳</div>
+        <div class="city-option" data-city="广州">广州</div>
+        <div class="city-option" data-city="成都">成都</div>
+        <div class="city-option" data-city="武汉">武汉</div>
+        <div class="city-option" data-city="南京">南京</div>
+        <div class="city-option" data-city="重庆">重庆</div>
+        <div class="city-option" data-city="西安">西安</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Baidu Map -->
+  <div class="map-container" id="searchMapContainer">
+    <div class="map-center-marker">
+      <div class="map-center-pin">
+        <div class="pin-body"></div>
+        <div class="pin-inner"></div>
+        <div class="pin-pulse"></div>
+      </div>
+    </div>
+    <div id="searchMap" style="width:100%;height:100%;"></div>
+  </div>
+  <div class="map-address-bar" id="mapAddressBar">
+    <span class="addr-icon">&#128205;</span>
+    <span class="addr-text" id="mapAddressText">拖动地图选择精确位置</span>
+  </div>
+
+  <div class="radius-section">
+    <div class="radius-label">
+      <span>扫描半径</span>
+      <span class="radius-value" id="radiusDisplay">200m</span>
+    </div>
+    <div class="radius-track">
+      <input type="range" id="radiusSlider" min="0" max="7" step="1" value="1">
+    </div>
+    <div class="radius-ticks">
+      <span>100</span><span>200</span><span>300</span><span>500</span><span>800</span><span>1k</span><span>1.5k</span><span>2k</span>
+    </div>
+  </div>
+  <button class="scan-btn" id="scanBtn" onclick="startScan()">
+    <span class="sweep"></span>
+    <span class="btn-text">开始扫描</span>
+  </button>
+</section>
+
+<!-- Error -->
+<div class="error-box" id="errorBox">
+  <div class="error-icon">&#9888;&#65039;</div>
+  <div class="error-title">扫描失败</div>
+  <div class="error-msg" id="errorMsg">请检查网络连接后重试</div>
+</div>
+
+<!-- Empty State -->
+<div class="empty-state" id="emptyState">
+  <div class="empty-radar">
+    <div class="grid-ring"></div>
+    <div class="grid-ring"></div>
+    <div class="grid-ring"></div>
+    <div class="crosshair h"></div>
+    <div class="crosshair v"></div>
+    <div class="scan-cone"></div>
+    <div class="scan-line"></div>
+    <div class="center-dot"></div>
+  </div>
+  <div class="empty-title">等待扫描指令</div>
+  <div class="empty-desc">输入目标地址，启动雷达扫描商圈人流数据</div>
+</div>
+
+<!-- Results Dashboard -->
+<div class="results" id="results">
+  <div class="container">
+    <div class="results-header">
+      <div class="results-location" id="resLocation"></div>
+      <div class="results-address" id="resAddress"></div>
+    </div>
+
+    <div class="score-section">
+      <div class="score-card">
+        <div class="gauge-wrap">
+          <canvas id="gaugeCanvas" width="400" height="400"></canvas>
+          <div class="gauge-value">
+            <div class="gauge-number" id="gaugeNumber">0</div>
+            <div class="gauge-label-small">人流指数</div>
+          </div>
+        </div>
+        <div class="traffic-level" id="trafficLevel"></div>
+        <div class="traffic-desc" id="trafficDesc"></div>
+      </div>
+    </div>
+
+    <!-- Results Map Section -->
+    <div class="results-map-section" id="resultsMapSection" style="display:none;">
+      <div class="results-map-title">扫描定位</div>
+      <div class="results-map-container" id="resultsMapContainer">
+        <div id="resultsMap" style="width:100%;height:100%;"></div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="chart-title">商圈业态分布</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="radarCanvas" width="600" height="500"></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">24小时人流曲线</div>
+        <div class="chart-canvas-wrap" style="position:relative">
+          <canvas id="hourlyCanvas" width="700" height="500"></canvas>
+          <div class="chart-tooltip" id="hourlyTooltip"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="poi-section">
+      <div class="poi-section-title">周边业态详情</div>
+      <div class="poi-accordion" id="poiAccordion"></div>
+    </div>
+
+    <!-- AI Recommendation Section -->
+    <div class="recommend-section" id="recommendSection">
+      <div class="recommend-title">&#128302; AI开店建议</div>
+
+      <button class="recommend-btn" id="recommendBtn" onclick="getRecommendation()">
+        <span class="sweep"></span>
+        <span class="rec-btn-text">&#10024; 获取AI建议</span>
+      </button>
+
+      <div class="recommend-loading" id="recommendLoading">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="recommend-loading-text">顶级选址顾问分析中...</div>
+      </div>
+
+      <div class="recommend-content" id="recommendContent">
+        <!-- Summary bar -->
+        <div class="rec-summary-bar" id="recSummaryBar"></div>
+
+        <!-- Recommended types -->
+        <div class="rec-subsection" id="recTypesSection">
+          <div class="rec-subsection-title">推荐开店类型</div>
+          <div class="rec-types-grid" id="recTypesGrid"></div>
+        </div>
+
+        <!-- Avoid types -->
+        <div class="rec-subsection" id="recAvoidSection">
+          <div class="rec-subsection-title">不建议类型</div>
+          <div id="recAvoidList"></div>
+        </div>
+
+        <!-- Key insights -->
+        <div class="rec-subsection" id="recInsightsSection">
+          <div class="rec-subsection-title">核心洞察</div>
+          <div id="recInsightsList"></div>
+        </div>
+
+        <!-- Warnings -->
+        <div class="rec-subsection" id="recWarningsSection">
+          <div class="rec-subsection-title">注意事项</div>
+          <div id="recWarningsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loc-badge" id="locBadge"></div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <span class="f-brand">邑品雷达 · YipinRadar</span><br>
+  Powered by 邑品引擎
+</footer>
+
+<script src="https://api.map.baidu.com/api?v=3.0&ak=YlP2YNubhIMkvrFtAlF1gvGY1I83HU4E"></script>
+
+<script>
+/* ── State ── */
+var RADIUS_MAP = [100, 200, 300, 500, 800, 1000, 1500, 2000];
+var CATEGORY_ICONS = {
+  '餐饮': '🍜', '小吃奶茶': '🧋', '超市便利': '🏪', '商场': '🏬',
+  '咖啡休闲': '☕', '地铁公交': '🚇', '写字楼': '🏢', '银行': '🏦'
+};
+var CATEGORY_KEYS = ['餐饮', '小吃奶茶', '超市便利', '商场', '咖啡休闲', '地铁公交', '写字楼', '银行'];
+
+var CITY_CENTERS = {
+  '杭州': { lng: 120.15, lat: 30.26 },
+  '北京': { lng: 116.40, lat: 39.91 },
+  '上海': { lng: 121.47, lat: 31.23 },
+  '深圳': { lng: 114.06, lat: 22.54 },
+  '广州': { lng: 113.26, lat: 23.13 },
+  '成都': { lng: 104.07, lat: 30.57 },
+  '武汉': { lng: 114.30, lat: 30.59 },
+  '南京': { lng: 118.80, lat: 32.06 },
+  '重庆': { lng: 106.55, lat: 29.56 },
+  '西安': { lng: 108.94, lat: 34.26 }
+};
+
+var POI_COLORS = {
+  '餐饮': '#ff6b6b',
+  '小吃奶茶': '#ffa94d',
+  '超市便利': '#69db7c',
+  '商场': '#748ffc',
+  '咖啡休闲': '#e599f7',
+  '地铁公交': '#4dabf7',
+  '写字楼': '#a9e34b',
+  '银行': '#ffd43b'
+};
+
+var currentData = null;
+var currentCity = '杭州';
+var hasRecommendation = false;
+
+// Baidu Map instances
+var searchMap = null;
+var searchRadiusCircle = null;
+var searchGeocoder = null;
+var resultsMap = null;
+
+/* ── Initialize Baidu Map ── */
+function initSearchMap() {
+  searchMap = new BMap.Map("searchMap", { enableMapClick: false });
+  var initPoint = new BMap.Point(120.131394, 30.289209); // 华星发展大厦
+  searchMap.centerAndZoom(initPoint, 15);
+  searchMap.enableScrollWheelZoom(true);
+  searchMap.enableDragging();
+
+  // Dark style
+  searchMap.setMapStyleV2({ styleId: '5939ae9760c3a48a04be22b154a8e13f' });
+
+  // Geocoder
+  searchGeocoder = new BMap.Geocoder();
+
+  // Draw initial radius circle
+  updateRadiusCircle();
+
+  // Reverse geocode on drag
+  searchMap.addEventListener('dragend', function() {
+    var center = searchMap.getCenter();
+    reverseGeocodeCenter(center);
+    updateRadiusCircle();
+  });
+
+  searchMap.addEventListener('zoomend', function() {
+    updateRadiusCircle();
+  });
+
+  // Initial reverse geocode
+  reverseGeocodeCenter(initPoint);
+}
+
+function reverseGeocodeCenter(point) {
+  if (!searchGeocoder) return;
+  searchGeocoder.getLocation(point, function(result) {
+    if (result && result.address) {
+      document.getElementById('mapAddressText').textContent = result.address;
+    } else {
+      document.getElementById('mapAddressText').textContent = point.lat.toFixed(6) + ', ' + point.lng.toFixed(6);
+    }
+  });
+}
+
+function updateRadiusCircle() {
+  if (!searchMap) return;
+  var center = searchMap.getCenter();
+  var radius = RADIUS_MAP[document.getElementById('radiusSlider').value];
+
+  if (searchRadiusCircle) {
+    searchMap.removeOverlay(searchRadiusCircle);
+  }
+
+  searchRadiusCircle = new BMap.Circle(center, radius, {
+    strokeColor: '#c8a96e',
+    fillColor: 'rgba(200, 169, 110, 0.1)',
+    strokeWeight: 2,
+    strokeOpacity: 0.8
+  });
+  searchMap.addOverlay(searchRadiusCircle);
+}
+
+function geocodeAndPan(address, city) {
+  return new Promise(function(resolve) {
+    if (!searchGeocoder || !searchMap) { resolve(null); return; }
+    searchGeocoder.getPoint(address, function(point) {
+      if (point) {
+        searchMap.panTo(point);
+        setTimeout(function() {
+          reverseGeocodeCenter(point);
+          updateRadiusCircle();
+          resolve(point);
+        }, 500);
+      } else {
+        resolve(null);
+      }
+    }, city || '杭州');
+  });
+}
+
+/* ── Radius Slider ── */
+var radiusSlider = document.getElementById('radiusSlider');
+var radiusDisplay = document.getElementById('radiusDisplay');
+radiusSlider.addEventListener('input', function() {
+  var val = RADIUS_MAP[radiusSlider.value];
+  if (val >= 1000) {
+    radiusDisplay.textContent = (val / 1000) + 'km';
+  } else {
+    radiusDisplay.textContent = val + 'm';
+  }
+  updateRadiusCircle();
+});
+
+/* ── City Dropdown ── */
+function selectCity(city) {
+  currentCity = city;
+  document.getElementById('cityLabel').textContent = city;
+  document.querySelectorAll('.city-option').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.city === city);
+  });
+  closeCityPopover();
+  var center = CITY_CENTERS[city];
+  if (center && searchMap) {
+    searchMap.panTo(new BMap.Point(center.lng, center.lat));
+    setTimeout(function() {
+      reverseGeocodeCenter(searchMap.getCenter());
+      updateRadiusCircle();
+    }, 600);
+  }
+}
+
+function closeCityPopover() {
+  document.getElementById('cityPopover').classList.remove('open');
+  document.getElementById('cityBtn').classList.remove('open');
+}
+
+document.getElementById('cityBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  var pop = document.getElementById('cityPopover');
+  var isOpen = pop.classList.contains('open');
+  pop.classList.toggle('open', !isOpen);
+  this.classList.toggle('open', !isOpen);
+});
+
+document.getElementById('cityPopover').addEventListener('click', function(e) {
+  var opt = e.target.closest('.city-option');
+  if (opt) selectCity(opt.dataset.city);
+});
+
+document.addEventListener('click', function() { closeCityPopover(); });
+
+/* ── Location Input: Enter + debounce ── */
+var _geocodeTimer = null;
+document.getElementById('locationInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    clearTimeout(_geocodeTimer);
+    var val = this.value.trim();
+    if (val) geocodeAndPan(val, currentCity);
+    this.blur();
+  }
+});
+document.getElementById('locationInput').addEventListener('input', function() {
+  clearTimeout(_geocodeTimer);
+  var val = this.value.trim();
+  if (val.length >= 2) {
+    _geocodeTimer = setTimeout(function() {
+      geocodeAndPan(val, currentCity);
+    }, 800);
+  }
+});
+
+/* ── Scan ── */
+async function startScan() {
+  var location = document.getElementById('locationInput').value.trim();
+  var city = currentCity;
+  var radius = RADIUS_MAP[radiusSlider.value];
+  var btn = document.getElementById('scanBtn');
+  var btnText = btn.querySelector('.btn-text');
+
+  // Geocode location text first; use the returned point for coordinates
+  var geocodedPoint = null;
+  if (location && searchMap) {
+    geocodedPoint = await geocodeAndPan(location, city);
+  }
+
+  // Get coordinates — prefer geocoded result, fall back to map center
+  var coordSource = geocodedPoint || (searchMap ? searchMap.getCenter() : null);
+  var lat = coordSource ? coordSource.lat : 30.289209;
+  var lng = coordSource ? coordSource.lng : 120.131394;
+
+  // If no text, use reverse geocoded address or coordinates
+  if (!location && coordSource) {
+    location = document.getElementById('mapAddressText').textContent;
+    if (!location || location === '拖动地图选择精确位置') {
+      location = lat.toFixed(6) + ',' + lng.toFixed(6);
+    }
+  }
+
+  if (!location) {
+    document.getElementById('locationInput').focus();
+    document.getElementById('locationInput').style.borderColor = 'var(--red)';
+    setTimeout(function() { document.getElementById('locationInput').style.borderColor = ''; }, 1500);
+    return;
+  }
+
+  // Loading state
+  btn.classList.add('loading');
+  btnText.textContent = '扫描中...';
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('emptyState').style.display = 'none';
+
+  // Reset recommendation
+  hasRecommendation = false;
+  document.getElementById('recommendSection').classList.remove('visible');
+  document.getElementById('recommendContent').classList.remove('visible', 'animate-in');
+  document.getElementById('recommendContent').style.display = 'none';
+  document.getElementById('recommendLoading').classList.remove('visible');
+  var recBtnText = document.getElementById('recommendBtn').querySelector('.rec-btn-text');
+  recBtnText.innerHTML = '&#10024; 获取AI建议';
+
+  try {
+    var url = '/api/traffic/analyze?location=' + encodeURIComponent(location) +
+      '&city=' + encodeURIComponent(city) +
+      '&radius=' + radius +
+      '&lat=' + lat +
+      '&lng=' + lng;
+    var resp = await fetch(url);
+    if (!resp.ok) throw new Error('服务返回错误 (' + resp.status + ')');
+    var data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    currentData = data;
+    // Store scan coordinates for results map
+    currentData._scan_lat = lat;
+    currentData._scan_lng = lng;
+    currentData._scan_radius = radius;
+    renderResults(data);
+  } catch (e) {
+    document.getElementById('errorBox').classList.add('show');
+    document.getElementById('errorMsg').textContent = e.message || '请检查网络连接后重试';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('emptyState').style.display = '';
+  } finally {
+    btn.classList.remove('loading');
+    btnText.textContent = '开始扫描';
+  }
+}
+
+/* ── Render Results ── */
+function renderResults(data) {
+  var el = document.getElementById('results');
+  el.style.display = 'block';
+  el.classList.remove('animate-in');
+
+  document.getElementById('resLocation').textContent = data.location;
+  document.getElementById('resAddress').textContent = data.address;
+  document.getElementById('emptyState').style.display = 'none';
+
+  // Trigger animation
+  requestAnimationFrame(function() {
+    el.classList.add('visible');
+    requestAnimationFrame(function() { el.classList.add('animate-in'); });
+  });
+
+  // Score gauge
+  animateGauge(data.traffic_score);
+  document.getElementById('trafficLevel').textContent = '人流等级：' + data.traffic_level;
+  document.getElementById('trafficLevel').style.color = scoreColor(data.traffic_score);
+  document.getElementById('trafficDesc').textContent = data.traffic_desc;
+
+  // Results map
+  renderResultsMap(data);
+
+  // Charts
+  setTimeout(function() { drawRadarChart(data.category_breakdown); }, 300);
+  setTimeout(function() { drawHourlyChart(data.hourly_estimate, data.current_hour, data.peak_hours); }, 400);
+
+  // POI cards
+  renderPoiCards(data.category_breakdown);
+
+  // Show recommendation section button
+  document.getElementById('recommendSection').classList.add('visible');
+
+  // Badge
+  document.getElementById('locBadge').innerHTML =
+    data.lat.toFixed(6) + ', ' + data.lng.toFixed(6) + '<span>|</span>' + data.timestamp + '<span>|</span>' + data.data_source;
+
+  // Scroll to results
+  setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200);
+}
+
+/* ── Results Map ── */
+function renderResultsMap(data) {
+  var section = document.getElementById('resultsMapSection');
+  section.style.display = 'block';
+
+  var lat = data._scan_lat || data.lat;
+  var lng = data._scan_lng || data.lng;
+  var radius = data._scan_radius || 500;
+
+  // Create or reset map
+  if (resultsMap) {
+    resultsMap.clearOverlays();
+    resultsMap.centerAndZoom(new BMap.Point(lng, lat), 15);
+  } else {
+    resultsMap = new BMap.Map("resultsMap", { enableMapClick: false });
+    resultsMap.centerAndZoom(new BMap.Point(lng, lat), 15);
+    resultsMap.setMapStyleV2({ styleId: '5939ae9760c3a48a04be22b154a8e13f' });
+    resultsMap.disableDragging();
+    resultsMap.disableScrollWheelZoom();
+    resultsMap.disableDoubleClickZoom();
+    resultsMap.disablePinchToZoom();
+  }
+
+  // Center marker - gold pin
+  var centerPoint = new BMap.Point(lng, lat);
+  var goldPinSvg = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">' +
+    '<defs><radialGradient id="g" cx="40%" cy="35%"><stop offset="0%" stop-color="#e8d5a8"/><stop offset="100%" stop-color="#a0843c"/></radialGradient></defs>' +
+    '<path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 26 16 26s16-14 16-26C32 7.16 24.84 0 16 0z" fill="url(#g)" stroke="#e8d5a8" stroke-width="1.5"/>' +
+    '<circle cx="16" cy="15" r="6" fill="#0a0a16"/>' +
+    '<circle cx="16" cy="15" r="3" fill="#c8a96e"/>' +
+    '</svg>'
+  );
+  var goldIcon = new BMap.Icon(goldPinSvg, new BMap.Size(32, 42), {
+    anchor: new BMap.Size(16, 42)
+  });
+  var centerMarker = new BMap.Marker(centerPoint, { icon: goldIcon });
+  resultsMap.addOverlay(centerMarker);
+
+  // Radius circle
+  var circle = new BMap.Circle(centerPoint, radius, {
+    strokeColor: '#c8a96e',
+    fillColor: 'rgba(200, 169, 110, 0.08)',
+    strokeWeight: 2,
+    strokeOpacity: 0.7
+  });
+  resultsMap.addOverlay(circle);
+
+  // POI example dots
+  var categories = data.category_breakdown || {};
+  var poiIndex = 0;
+  CATEGORY_KEYS.forEach(function(key) {
+    var cat = categories[key];
+    if (!cat || !cat.examples || cat.examples.length === 0) return;
+    var color = POI_COLORS[key] || '#c8a96e';
+
+    cat.examples.forEach(function(name, idx) {
+      if (idx > 4) return; // limit to 5 per category
+      // Scatter small dots around center with random offset within radius
+      var angle = (poiIndex * 137.5) * Math.PI / 180; // golden angle distribution
+      var dist = (0.3 + Math.random() * 0.6) * radius;
+      var offsetLng = (dist * Math.cos(angle)) / 111000 / Math.cos(lat * Math.PI / 180);
+      var offsetLat = (dist * Math.sin(angle)) / 111000;
+      var poiPoint = new BMap.Point(lng + offsetLng, lat + offsetLat);
+
+      var dotSvg = 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12">' +
+        '<circle cx="6" cy="6" r="5" fill="' + color + '" opacity="0.8" stroke="#fff" stroke-width="1" stroke-opacity="0.3"/>' +
+        '</svg>'
+      );
+      var dotIcon = new BMap.Icon(dotSvg, new BMap.Size(12, 12), {
+        anchor: new BMap.Size(6, 6)
+      });
+      var poiMarker = new BMap.Marker(poiPoint, { icon: dotIcon });
+      resultsMap.addOverlay(poiMarker);
+      poiIndex++;
+    });
+  });
+
+  // Auto zoom to fit circle
+  var bounds = new BMap.Bounds(
+    new BMap.Point(lng - radius / 80000, lat - radius / 111000),
+    new BMap.Point(lng + radius / 80000, lat + radius / 111000)
+  );
+  try {
+    resultsMap.setViewport([bounds.getSouthWest(), bounds.getNorthEast()], { margins: [20, 20, 20, 20] });
+  } catch (e) {
+    // fallback
+  }
+}
+
+/* ── Score Color ── */
+function scoreColor(s) {
+  if (s < 20) return 'var(--red)';
+  if (s < 40) return 'var(--orange)';
+  if (s < 60) return 'var(--yellow)';
+  if (s < 80) return 'var(--green)';
+  return 'var(--gold)';
+}
+
+function scoreColorRaw(s) {
+  if (s < 20) return '#ff5c5c';
+  if (s < 40) return '#ff9a3c';
+  if (s < 60) return '#ffd23c';
+  if (s < 80) return '#4adf7c';
+  return '#c8a96e';
+}
+
+/* ── Gauge Animation ── */
+function animateGauge(target) {
+  var canvas = document.getElementById('gaugeCanvas');
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  var cx = w / 2, cy = h / 2;
+  var r = 170;
+  var lineW = 18;
+  var startAngle = Math.PI * 0.75;
+  var totalAngle = Math.PI * 1.5;
+
+  var current = 0;
+  var numEl = document.getElementById('gaugeNumber');
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Background arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, startAngle + totalAngle, false);
+    ctx.strokeStyle = 'rgba(200, 169, 110, 0.08)';
+    ctx.lineWidth = lineW;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Value arc
+    var frac = current / 100;
+    var endAngle = startAngle + totalAngle * frac;
+    if (current > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle, false);
+      ctx.strokeStyle = scoreColorRaw(current);
+      ctx.lineWidth = lineW;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle, false);
+      ctx.strokeStyle = scoreColorRaw(current) + '40';
+      ctx.lineWidth = lineW + 12;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Tick marks
+    for (var i = 0; i <= 10; i++) {
+      var angle = startAngle + (totalAngle * i / 10);
+      var inner = r - lineW / 2 - 8;
+      var outer = r - lineW / 2 - 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+      ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.15)';
+      ctx.lineWidth = i % 5 === 0 ? 2 : 1;
+      ctx.stroke();
+    }
+
+    numEl.textContent = Math.round(current);
+    numEl.style.color = scoreColorRaw(Math.round(current));
+
+    if (current < target) {
+      current += Math.max(0.5, (target - current) * 0.06);
+      if (target - current < 0.5) current = target;
+      requestAnimationFrame(draw);
+    }
+  }
+
+  current = 0;
+  draw();
+}
+
+/* ── Radar Chart ── */
+function drawRadarChart(categories) {
+  var canvas = document.getElementById('radarCanvas');
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  var cx = w / 2, cy = h / 2 + 10;
+  var maxR = Math.min(w, h) * 0.35;
+
+  ctx.clearRect(0, 0, w, h);
+
+  var axes = CATEGORY_KEYS;
+  var n = axes.length;
+  var angleStep = (Math.PI * 2) / n;
+
+  // Find max for normalization
+  var maxCount = 0;
+  axes.forEach(function(k) { if (categories[k]) maxCount = Math.max(maxCount, categories[k].count); });
+  if (maxCount === 0) maxCount = 1;
+
+  // Animate data polygon
+  var progress = 0;
+
+  function drawFrame() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid rings
+    for (var ring = 1; ring <= 4; ring++) {
+      var rr = maxR * ring / 4;
+      ctx.beginPath();
+      for (var i = 0; i <= n; i++) {
+        var angle = -Math.PI / 2 + angleStep * i;
+        var x = cx + Math.cos(angle) * rr;
+        var y = cy + Math.sin(angle) * rr;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Axis lines
+    for (var i = 0; i < n; i++) {
+      var angle = -Math.PI / 2 + angleStep * i;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Data polygon
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var cat = categories[axes[i]];
+      var val = cat ? cat.count / maxCount : 0;
+      var r = (maxR * 0.15 + maxR * 0.85 * val) * progress;
+      var angle = -Math.PI / 2 + angleStep * i;
+      pts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+    }
+
+    // Fill
+    ctx.beginPath();
+    pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(200, 169, 110, 0.12)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200, 169, 110, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Dots
+    pts.forEach(function(p) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#c8a96e';
+      ctx.fill();
+    });
+
+    // Labels
+    ctx.font = '600 24px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (var i = 0; i < n; i++) {
+      var angle = -Math.PI / 2 + angleStep * i;
+      var labelR = maxR + 40;
+      var lx = cx + Math.cos(angle) * labelR;
+      var ly = cy + Math.sin(angle) * labelR;
+
+      ctx.fillStyle = '#e8e4dc';
+      ctx.font = '600 22px system-ui';
+      ctx.fillText(axes[i], lx, ly - 12);
+
+      var cat = categories[axes[i]];
+      var count = cat ? cat.count : 0;
+      ctx.fillStyle = '#c8a96e';
+      ctx.font = '700 24px system-ui';
+      ctx.fillText(count.toString(), lx, ly + 14);
+    }
+
+    if (progress < 1) {
+      progress += 0.03;
+      if (progress > 1) progress = 1;
+      requestAnimationFrame(drawFrame);
+    }
+  }
+
+  progress = 0;
+  drawFrame();
+}
+
+/* ── Hourly Chart ── */
+function drawHourlyChart(hourly, currentHour, peakHours) {
+  var canvas = document.getElementById('hourlyCanvas');
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+
+  var padLeft = 50, padRight = 20, padTop = 20, padBottom = 50;
+  var chartW = w - padLeft - padRight;
+  var chartH = h - padTop - padBottom;
+
+  var hours = [];
+  var values = [];
+  for (var i = 0; i < 24; i++) {
+    hours.push(i);
+    values.push(hourly[i.toString()] || 0);
+  }
+  var maxVal = Math.max.apply(null, values.concat([1]));
+
+  function xPos(i) { return padLeft + (i / 23) * chartW; }
+  function yPos(v) { return padTop + chartH - (v / maxVal) * chartH; }
+
+  var progress = 0;
+
+  // Tooltip tracking
+  var tooltip = document.getElementById('hourlyTooltip');
+  canvas.onmousemove = function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var mx = (e.clientX - rect.left) * scaleX;
+
+    var closest = -1, closestDist = Infinity;
+    for (var i = 0; i < 24; i++) {
+      var dx = Math.abs(mx - xPos(i));
+      if (dx < closestDist) { closestDist = dx; closest = i; }
+    }
+
+    if (closest >= 0 && closestDist < chartW / 24 + 10) {
+      var tipX = (xPos(closest) / canvas.width) * rect.width;
+      var tipY = (yPos(values[closest]) / canvas.height) * rect.height;
+      tooltip.style.left = tipX + 'px';
+      tooltip.style.top = (tipY - 40) + 'px';
+      tooltip.textContent = closest + ':00 \u2014 人流指数 ' + values[closest];
+      tooltip.classList.add('show');
+    } else {
+      tooltip.classList.remove('show');
+    }
+  };
+  canvas.onmouseleave = function() { tooltip.classList.remove('show'); };
+
+  // Touch support for tooltip
+  canvas.ontouchmove = function(e) {
+    e.preventDefault();
+    var touch = e.touches[0];
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var mx = (touch.clientX - rect.left) * scaleX;
+
+    var closest = -1, closestDist = Infinity;
+    for (var i = 0; i < 24; i++) {
+      var dx = Math.abs(mx - xPos(i));
+      if (dx < closestDist) { closestDist = dx; closest = i; }
+    }
+
+    if (closest >= 0 && closestDist < chartW / 24 + 10) {
+      var tipX = (xPos(closest) / canvas.width) * rect.width;
+      var tipY = (yPos(values[closest]) / canvas.height) * rect.height;
+      tooltip.style.left = tipX + 'px';
+      tooltip.style.top = (tipY - 40) + 'px';
+      tooltip.textContent = closest + ':00 \u2014 人流指数 ' + values[closest];
+      tooltip.classList.add('show');
+    }
+  };
+  canvas.ontouchend = function() { tooltip.classList.remove('show'); };
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Y axis grid
+    var ySteps = 5;
+    for (var i = 0; i <= ySteps; i++) {
+      var v = (maxVal / ySteps) * i;
+      var y = yPos(v);
+      ctx.beginPath();
+      ctx.moveTo(padLeft, y);
+      ctx.lineTo(w - padRight, y);
+      ctx.strokeStyle = 'rgba(200, 169, 110, 0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#8a8696';
+      ctx.font = '22px system-ui';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(Math.round(v).toString(), padLeft - 10, y);
+    }
+
+    // X axis labels
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = '22px system-ui';
+    for (var i = 0; i < 24; i += 3) {
+      ctx.fillStyle = '#8a8696';
+      ctx.fillText(i + ':00', xPos(i), padTop + chartH + 14);
+    }
+
+    // How many points to draw based on progress
+    var numPts = Math.min(24, Math.floor(progress * 24) + 1);
+
+    // Smooth curve helper using cardinal spline
+    function getSplinePoints(pts, tension) {
+      tension = tension || 0.4;
+      var result = [];
+      for (var i = 0; i < pts.length - 1; i++) {
+        var p0 = pts[Math.max(0, i - 1)];
+        var p1 = pts[i];
+        var p2 = pts[i + 1];
+        var p3 = pts[Math.min(pts.length - 1, i + 2)];
+
+        var nSeg = 16;
+        for (var t = 0; t < nSeg; t++) {
+          var s = t / nSeg;
+          var s2 = s * s, s3 = s2 * s;
+          var h1 = 2 * s3 - 3 * s2 + 1;
+          var h2 = -2 * s3 + 3 * s2;
+          var h3 = s3 - 2 * s2 + s;
+          var h4 = s3 - s2;
+
+          var tx = (p2.x - p0.x) * tension;
+          var ty = (p2.y - p0.y) * tension;
+          var tx2 = (p3.x - p1.x) * tension;
+          var ty2 = (p3.y - p1.y) * tension;
+
+          result.push({
+            x: h1 * p1.x + h2 * p2.x + h3 * tx + h4 * tx2,
+            y: h1 * p1.y + h2 * p2.y + h3 * ty + h4 * ty2
+          });
+        }
+      }
+      if (pts.length > 0) result.push(pts[pts.length - 1]);
+      return result;
+    }
+
+    var rawPts = [];
+    for (var i = 0; i < numPts; i++) {
+      rawPts.push({ x: xPos(i), y: yPos(values[i]) });
+    }
+
+    if (rawPts.length >= 2) {
+      var smooth = getSplinePoints(rawPts, 0.35);
+
+      // Gradient fill
+      var grad = ctx.createLinearGradient(0, padTop, 0, padTop + chartH);
+      grad.addColorStop(0, 'rgba(200, 169, 110, 0.25)');
+      grad.addColorStop(1, 'rgba(200, 169, 110, 0.01)');
+
+      ctx.beginPath();
+      ctx.moveTo(smooth[0].x, padTop + chartH);
+      ctx.lineTo(smooth[0].x, smooth[0].y);
+      smooth.forEach(function(p) { ctx.lineTo(p.x, p.y); });
+      ctx.lineTo(smooth[smooth.length - 1].x, padTop + chartH);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Line
+      ctx.beginPath();
+      ctx.moveTo(smooth[0].x, smooth[0].y);
+      smooth.forEach(function(p) { ctx.lineTo(p.x, p.y); });
+      ctx.strokeStyle = '#c8a96e';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // Peak hour markers (only if fully drawn)
+    if (progress >= 1 && peakHours) {
+      peakHours.forEach(function(hr) {
+        if (hr < 24) {
+          var px = xPos(hr), py = yPos(values[hr]);
+          ctx.beginPath();
+          ctx.moveTo(px, py - 14);
+          ctx.lineTo(px - 7, py - 4);
+          ctx.lineTo(px + 7, py - 4);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(200, 169, 110, 0.7)';
+          ctx.fill();
+        }
+      });
+    }
+
+    // Current hour pulsing dot (only if fully drawn)
+    if (progress >= 1 && currentHour != null && currentHour < 24) {
+      var px = xPos(currentHour), py = yPos(values[currentHour]);
+      var pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 12, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(74, 158, 255, ' + (0.15 * pulse) + ')';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#4a9eff';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+
+      requestAnimationFrame(draw);
+      return;
+    }
+
+    if (progress < 1) {
+      progress += 0.04;
+      if (progress > 1) progress = 1;
+      requestAnimationFrame(draw);
+    }
+  }
+
+  progress = 0;
+  draw();
+}
+
+/* ── POI Accordion Cards ── */
+function renderPoiCards(categories) {
+  var container = document.getElementById('poiAccordion');
+  container.innerHTML = '';
+
+  var entries = CATEGORY_KEYS
+    .filter(function(k) { return categories[k] && categories[k].count > 0; })
+    .map(function(k) { return Object.assign({ key: k }, categories[k]); });
+
+  var expandedItem = null;
+
+  entries.forEach(function(cat, idx) {
+    var item = document.createElement('div');
+    item.className = 'poi-acc-item';
+    item.style.transition = 'opacity 0.5s ease ' + (idx * 0.08) + 's, transform 0.5s ease ' + (idx * 0.08) + 's, border-color 0.3s, box-shadow 0.3s';
+
+    var examples = cat.examples || [];
+    var examplesHtml = '';
+    if (examples.length > 0) {
+      examplesHtml = examples.map(function(e) {
+        return '<div class="poi-acc-example"><span class="ex-dot"></span>' + e + '</div>';
+      }).join('');
+    } else {
+      examplesHtml = '<div class="poi-acc-example" style="opacity:0.4;"><span class="ex-dot"></span>暂无数据</div>';
+    }
+
+    item.innerHTML =
+      '<div class="poi-acc-header">' +
+        '<span class="poi-acc-icon">' + (CATEGORY_ICONS[cat.key] || '📍') + '</span>' +
+        '<span class="poi-acc-name">' + cat.key + '</span>' +
+        '<span class="poi-acc-count">' + cat.count + ' <span>家</span></span>' +
+        '<svg class="poi-acc-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 8 10 13 15 8"/></svg>' +
+      '</div>' +
+      '<div class="poi-acc-body"><div class="poi-acc-list">' + examplesHtml + '</div></div>';
+
+    var header = item.querySelector('.poi-acc-header');
+    header.addEventListener('click', function() {
+      if (item.classList.contains('expanded')) {
+        item.classList.remove('expanded');
+        expandedItem = null;
+      } else {
+        if (expandedItem) {
+          expandedItem.classList.remove('expanded');
+        }
+        item.classList.add('expanded');
+        expandedItem = item;
+      }
+    });
+
+    container.appendChild(item);
+
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { item.classList.add('animate-in'); });
+    });
+  });
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);padding:24px;font-size:14px;">该区域暂无检测到相关业态</div>';
+  }
+}
+
+/* ── AI Recommendation ── */
+async function getRecommendation() {
+  if (!currentData) return;
+
+  var btn = document.getElementById('recommendBtn');
+  var btnText = btn.querySelector('.rec-btn-text');
+  var loading = document.getElementById('recommendLoading');
+  var content = document.getElementById('recommendContent');
+
+  // Loading state
+  btn.classList.add('loading');
+  btnText.textContent = '分析中...';
+  loading.classList.add('visible');
+  content.classList.remove('visible', 'animate-in');
+  content.style.display = 'none';
+
+  var location = document.getElementById('locationInput').value.trim();
+  var city = currentCity;
+  var radius = RADIUS_MAP[radiusSlider.value];
+
+  // Use map center address if no text input
+  if (!location) {
+    location = document.getElementById('mapAddressText').textContent;
+  }
+
+  try {
+    var resp = await fetch('/api/traffic/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location: location, city: city, radius: radius })
+    });
+
+    if (!resp.ok) throw new Error('AI建议服务返回错误 (' + resp.status + ')');
+    var data = await resp.json();
+    var rec = data.recommendation;
+
+    if (!rec) throw new Error('未获取到建议数据');
+
+    renderRecommendation(rec);
+    hasRecommendation = true;
+  } catch (e) {
+    document.getElementById('errorBox').classList.add('show');
+    document.getElementById('errorMsg').textContent = e.message || 'AI建议获取失败，请重试';
+  } finally {
+    btn.classList.remove('loading');
+    btnText.innerHTML = hasRecommendation ? '&#10024; 重新获取建议' : '&#10024; 获取AI建议';
+    loading.classList.remove('visible');
+  }
+}
+
+function renderRecommendation(rec) {
+  var content = document.getElementById('recommendContent');
+
+  // Summary bar
+  var summaryEl = document.getElementById('recSummaryBar');
+  var rating = (rec.overall_rating || 'B').toUpperCase();
+  var gradeClass = 'grade-' + rating.toLowerCase();
+
+  summaryEl.innerHTML =
+    '<div class="rec-rating-badge ' + gradeClass + '">' + rating + '</div>' +
+    '<div class="rec-summary-info">' +
+      '<div class="rec-summary-row"><span class="rec-summary-label">营业时段</span><span class="rec-summary-value">' + (rec.best_opening_hours || '-') + '</span></div>' +
+      '<div class="rec-summary-row"><span class="rec-summary-label">目标客群</span><span class="rec-summary-value">' + (rec.target_customers || '-') + '</span></div>' +
+      '<div class="rec-summary-row"><span class="rec-summary-label">竞争分析</span><span class="rec-summary-value">' + (rec.competition_analysis || '-') + '</span></div>' +
+      (rec.overall_comment ? '<div class="rec-overall-comment">' + rec.overall_comment + '</div>' : '') +
+    '</div>';
+
+  // Recommended types
+  var typesGrid = document.getElementById('recTypesGrid');
+  var typesSection = document.getElementById('recTypesSection');
+  typesGrid.innerHTML = '';
+  var types = rec.recommended_types || [];
+  if (types.length > 0) {
+    typesSection.style.display = '';
+    types.sort(function(a, b) { return (b.confidence || 0) - (a.confidence || 0); });
+    types.forEach(function(t, idx) {
+      var medal = '';
+      if (idx === 0) medal = '🥇';
+      else if (idx === 1) medal = '🥈';
+      else if (idx === 2) medal = '🥉';
+
+      var card = document.createElement('div');
+      card.className = 'rec-type-card';
+      card.innerHTML =
+        '<div class="rec-type-header">' +
+          (medal ? '<span class="rec-type-medal">' + medal + '</span>' : '') +
+          '<span class="rec-type-name">' + (t.type || '') + '</span>' +
+        '</div>' +
+        '<div class="rec-confidence-text">置信度 ' + (t.confidence || 0) + '%</div>' +
+        '<div class="rec-confidence-bar"><div class="rec-confidence-fill" style="width:0%"></div></div>' +
+        '<div class="rec-type-reason">' + (t.reason || '') + '</div>' +
+        (t.monthly_rent_estimate ? '<div class="rec-type-rent">预估月租: <strong>' + t.monthly_rent_estimate + '</strong> 元</div>' : '');
+      typesGrid.appendChild(card);
+
+      // Animate confidence bar
+      setTimeout(function() {
+        var fill = card.querySelector('.rec-confidence-fill');
+        if (fill) fill.style.width = (t.confidence || 0) + '%';
+      }, 300 + idx * 100);
+    });
+  } else {
+    typesSection.style.display = 'none';
+  }
+
+  // Avoid types
+  var avoidList = document.getElementById('recAvoidList');
+  var avoidSection = document.getElementById('recAvoidSection');
+  avoidList.innerHTML = '';
+  var avoids = rec.avoid_types || [];
+  if (avoids.length > 0) {
+    avoidSection.style.display = '';
+    avoids.forEach(function(a) {
+      var card = document.createElement('div');
+      card.className = 'rec-avoid-card';
+      card.innerHTML =
+        '<div class="rec-avoid-icon">&#9888;&#65039;</div>' +
+        '<div>' +
+          '<div class="rec-avoid-name">' + (a.type || '') + '</div>' +
+          '<div class="rec-avoid-reason">' + (a.reason || '') + '</div>' +
+        '</div>';
+      avoidList.appendChild(card);
+    });
+  } else {
+    avoidSection.style.display = 'none';
+  }
+
+  // Key insights
+  var insightsList = document.getElementById('recInsightsList');
+  var insightsSection = document.getElementById('recInsightsSection');
+  insightsList.innerHTML = '';
+  var insights = rec.key_insights || [];
+  if (insights.length > 0) {
+    insightsSection.style.display = '';
+    insights.forEach(function(text, idx) {
+      var card = document.createElement('div');
+      card.className = 'rec-insight-card';
+      card.innerHTML =
+        '<div class="rec-insight-num">' + (idx + 1) + '</div>' +
+        '<div class="rec-insight-text">' + text + '</div>';
+      insightsList.appendChild(card);
+    });
+  } else {
+    insightsSection.style.display = 'none';
+  }
+
+  // Warnings
+  var warningsList = document.getElementById('recWarningsList');
+  var warningsSection = document.getElementById('recWarningsSection');
+  warningsList.innerHTML = '';
+  var warnings = rec.warnings || [];
+  if (warnings.length > 0) {
+    warningsSection.style.display = '';
+    warnings.forEach(function(text) {
+      var card = document.createElement('div');
+      card.className = 'rec-warning-card';
+      card.innerHTML =
+        '<div class="rec-warning-icon">&#9889;</div>' +
+        '<div class="rec-warning-text">' + text + '</div>';
+      warningsList.appendChild(card);
+    });
+  } else {
+    warningsSection.style.display = 'none';
+  }
+
+  // Show content with animation
+  content.style.display = 'block';
+  requestAnimationFrame(function() {
+    content.classList.add('visible');
+    requestAnimationFrame(function() {
+      content.classList.add('animate-in');
+    });
+  });
+
+  // Staggered animation for subsections
+  var subsections = content.querySelectorAll('.rec-subsection');
+  subsections.forEach(function(section, idx) {
+    if (section.style.display === 'none') return;
+    setTimeout(function() {
+      section.classList.add('animate-in');
+    }, 200 + idx * 150);
+  });
+}
+
+/* ── Initialize Map on Load ── */
+window.addEventListener('load', function() {
+  if (typeof BMap !== 'undefined') {
+    initSearchMap();
+  } else {
+    // Retry after a short delay in case script hasn't loaded yet
+    setTimeout(function() {
+      if (typeof BMap !== 'undefined') {
+        initSearchMap();
+      }
+    }, 1000);
+  }
+});
+</script>
+</body>
+</html>
