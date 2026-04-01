@@ -97,35 +97,35 @@ async def analyze_location_traffic(
     if not ak:
         return {"error": "baidu_map_ak not configured"}
 
-    # Resolve location
-    if location_name and location_name in LOCATIONS:
+    # Resolve location — if lat/lng provided, use them directly
+    if lat is not None and lng is not None:
+        pass  # use provided coordinates
+    elif location_name and location_name in LOCATIONS:
         loc = LOCATIONS[location_name]
         lat, lng = loc["lat"], loc["lng"]
         city = loc["city"]
-    elif lat is None or lng is None:
-        # Try searching by name
-        if location_name:
-            async with httpx.AsyncClient(timeout=15) as client:
-                resp = await client.get(
-                    "https://api.map.baidu.com/place/v2/search",
-                    params={
-                        "query": location_name,
-                        "region": city,
-                        "output": "json",
-                        "ak": ak,
-                    },
-                )
-                resp.raise_for_status()
-                result = resp.json()
-            pois = result.get("results", [])
-            if not pois:
-                return {"error": f"Location '{location_name}' not found"}
-            target = pois[0]
-            loc_data = target.get("location", {})
-            lat, lng = loc_data.get("lat"), loc_data.get("lng")
-            location_name = target.get("name", location_name)
-        else:
-            return {"error": "Must provide location_name or lat/lng"}
+    elif location_name:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                "https://api.map.baidu.com/place/v2/search",
+                params={
+                    "query": location_name,
+                    "region": city,
+                    "output": "json",
+                    "ak": ak,
+                },
+            )
+            resp.raise_for_status()
+            result = resp.json()
+        pois = result.get("results", [])
+        if not pois:
+            return {"error": f"Location '{location_name}' not found"}
+        target = pois[0]
+        loc_data = target.get("location", {})
+        lat, lng = loc_data.get("lat"), loc_data.get("lng")
+        location_name = target.get("name", location_name)
+    else:
+        return {"error": "Must provide location_name or lat/lng"}
 
     # Search each POI category
     category_results = {}

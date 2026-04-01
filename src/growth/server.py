@@ -250,10 +250,18 @@ async def radar_page():
 # ---- Foot Traffic Monitoring ----
 
 @app.get("/api/traffic/analyze")
-async def traffic_analyze(location: str = "华星发展大厦", city: str = "杭州", radius: int = 500):
+async def traffic_analyze(
+    location: str = "华星发展大厦",
+    city: str = "杭州",
+    radius: int = 500,
+    lat: float | None = None,
+    lng: float | None = None,
+):
     """Full traffic analysis with category breakdown and hourly estimates."""
     from src.growth.foot_traffic import analyze_location_traffic
-    return await analyze_location_traffic(location_name=location, city=city, radius_m=radius)
+    return await analyze_location_traffic(
+        location_name=location, lat=lat, lng=lng, city=city, radius_m=radius
+    )
 
 
 @app.post("/api/traffic/recommend")

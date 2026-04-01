@@ -1655,6 +1655,7 @@ async function startScan() {
     var resp = await fetch(url);
     if (!resp.ok) throw new Error('服务返回错误 (' + resp.status + ')');
     var data = await resp.json();
+    if (data.error) throw new Error(data.error);
     currentData = data;
     // Store scan coordinates for results map
     currentData._scan_lat = lat;
