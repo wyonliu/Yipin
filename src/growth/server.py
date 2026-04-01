@@ -256,6 +256,27 @@ async def traffic_analyze(location: str = "华星发展大厦", city: str = "杭
     return await analyze_location_traffic(location_name=location, city=city, radius_m=radius)
 
 
+@app.post("/api/traffic/recommend")
+async def traffic_recommend(request: Request):
+    """AI-powered store opening recommendation based on traffic analysis."""
+    from src.growth.foot_traffic import analyze_location_traffic, generate_store_recommendation
+    body = await request.json()
+    location = body.get("location", "")
+    city = body.get("city", "杭州")
+    radius = body.get("radius", 500)
+
+    # First get traffic analysis
+    analysis = await analyze_location_traffic(
+        location_name=location, city=city, radius_m=radius
+    )
+    if analysis.get("error"):
+        return JSONResponse({"error": analysis["error"]}, status_code=400)
+
+    # Then generate recommendation
+    recommendation = await generate_store_recommendation(analysis)
+    return {"analysis": analysis, "recommendation": recommendation}
+
+
 @app.get("/api/traffic/snapshot")
 async def traffic_snapshot(location: str = "华星发展大厦", city: str = "杭州"):
     """Take a foot traffic snapshot and save to disk."""

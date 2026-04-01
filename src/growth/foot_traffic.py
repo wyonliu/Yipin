@@ -230,6 +230,138 @@ async def monitor_24h(
     return snapshot
 
 
+async def generate_store_recommendation(analysis_data: dict) -> dict:
+    """Call DeepSeek V3 via OpenRouter to generate expert store opening recommendations.
+
+    Args:
+        analysis_data: Output from analyze_location_traffic().
+
+    Returns:
+        Dict with recommended_types, avoid_types, key_insights, warnings, etc.
+    """
+    location = analysis_data.get("location", "未知")
+    address = analysis_data.get("address", "未知")
+    city = analysis_data.get("city", "未知")
+    traffic_score = analysis_data.get("traffic_score", 0)
+    traffic_level = analysis_data.get("traffic_level", "未知")
+    traffic_desc = analysis_data.get("traffic_desc", "")
+    category_breakdown = analysis_data.get("category_breakdown", {})
+    hourly_estimate = analysis_data.get("hourly_estimate", {})
+    peak_hours = analysis_data.get("peak_hours", [])
+    total_weighted_pois = analysis_data.get("total_weighted_pois", 0)
+
+    # Build category detail text
+    category_lines = []
+    for cat_name, cat_data in category_breakdown.items():
+        examples_str = "、".join(cat_data.get("examples", [])) or "无"
+        category_lines.append(
+            f"  - {cat_name}: {cat_data.get('count', 0)}家 "
+            f"(加权分: {cat_data.get('weighted', 0)}), 代表: {examples_str}"
+        )
+    category_text = "\n".join(category_lines)
+
+    # Build hourly estimate text
+    hourly_lines = []
+    for hour in sorted(hourly_estimate.keys(), key=lambda h: int(h)):
+        hourly_lines.append(f"  {hour}时: {hourly_estimate[hour]}")
+    hourly_text = "\n".join(hourly_lines)
+
+    peak_hours_str = "、".join(str(h) for h in peak_hours) if peak_hours else "无数据"
+
+    user_prompt = f"""请根据以下商圈数据，给出专业的开店建议。
+
+【位置信息】
+- 地点名称: {location}
+- 详细地址: {address}
+- 城市: {city}
+
+【人流评估】
+- 人流评分: {traffic_score}/100
+- 人流等级: {traffic_level} ({traffic_desc})
+- 加权POI总分: {total_weighted_pois}
+
+【商业业态分布】
+{category_text}
+
+【每小时人流估算】
+{hourly_text}
+
+【高峰时段】
+{peak_hours_str}时
+
+请基于以上数据，返回一个JSON对象，包含以下字段：
+- recommended_types: 推荐开设的店铺类型列表，每项包含 type(店铺类型), reason(推荐理由), confidence(推荐信心0-100), monthly_rent_estimate(月租金估算范围)
+- avoid_types: 不建议开设的店铺类型列表，每项包含 type(不建议类型), reason(原因)
+- key_insights: 关键洞察列表（字符串数组）
+- warnings: 注意事项列表（字符串数组）
+- best_opening_hours: 建议营业时段
+- target_customers: 目标客群描述
+- competition_analysis: 竞争分析
+- overall_rating: 总体评级(A/B/C/D)
+- overall_comment: 总体评价
+
+只返回JSON，不要有其他文字。"""
+
+    system_prompt = (
+        "你是中国顶级商业选址顾问，拥有20年连锁餐饮和零售选址经验。"
+        "你擅长通过商圈数据分析给出精准的开店建议。请用专业但易懂的中文回答。"
+    )
+
+    api_url = settings.openrouter_base_url.strip().rstrip("/") + "/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {settings.openrouter_api_key.strip()}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": settings.openrouter_model.strip(),
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.7,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(api_url, headers=headers, json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+
+        content = data["choices"][0]["message"]["content"]
+        recommendation = json.loads(content)
+        return recommendation
+
+    except (httpx.HTTPStatusError, httpx.RequestError) as e:
+        logger.error(f"OpenRouter API call failed: {e}")
+        return {
+            "error": f"AI API call failed: {type(e).__name__}: {e}",
+            "recommended_types": [],
+            "avoid_types": [],
+            "key_insights": [],
+            "warnings": ["AI推荐服务暂时不可用，请稍后重试"],
+            "best_opening_hours": "",
+            "target_customers": "",
+            "competition_analysis": "",
+            "overall_rating": "",
+            "overall_comment": "AI推荐服务暂时不可用",
+        }
+    except (json.JSONDecodeError, KeyError, IndexError) as e:
+        logger.error(f"Failed to parse AI response: {e}")
+        return {
+            "error": f"AI response parse failed: {type(e).__name__}: {e}",
+            "recommended_types": [],
+            "avoid_types": [],
+            "key_insights": [],
+            "warnings": ["AI返回数据格式异常，请稍后重试"],
+            "best_opening_hours": "",
+            "target_customers": "",
+            "competition_analysis": "",
+            "overall_rating": "",
+            "overall_comment": "AI返回数据格式异常",
+        }
+
+
 def generate_daily_summary(date_str: str | None = None) -> dict:
     """Generate a daily foot traffic summary from saved snapshots."""
     if not date_str:
