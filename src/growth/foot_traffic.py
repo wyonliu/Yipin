@@ -28,7 +28,7 @@ POI_CATEGORIES = {
     "超市便利": {"query": "超市", "weight": 1.2},
     "商场": {"query": "商场", "weight": 1.2},
     "咖啡休闲": {"query": "咖啡", "weight": 0.8},
-    "地铁公交": {"query": "地铁站", "weight": 1.5},
+    "地铁公交": {"query": "地铁", "weight": 1.5},
     "写字楼": {"query": "写字楼", "weight": 0.6},
     "银行": {"query": "银行", "weight": 0.5},
 }
@@ -145,8 +145,8 @@ async def analyze_location_traffic(
         }
 
     # Normalize to 0-100 score
-    # Calibration: 400 weighted POIs in 500m ≈ score 100 (very busy commercial district)
-    traffic_score = min(100, round(total_weighted_score * 100 / 400))
+    # Calibration: 200 weighted POIs in 500m ≈ score 100 (very busy commercial district)
+    traffic_score = min(100, round(total_weighted_score * 100 / 200))
 
     # Generate 24-hour traffic estimate
     now_hour = datetime.now().hour
